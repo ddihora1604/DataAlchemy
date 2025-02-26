@@ -618,74 +618,51 @@ export default function Home() {
   }
 
   const handleGenerate = async () => {
+    if (!dataset) {
+      toast.error("Please upload a dataset first");
+      return;
+    }
+
     try {
       setIsGenerating(true);
+      setGenerationStage('Generating synthetic data using GMM...');
       setGenerationProgress(0);
-      setGenerationStage('Initializing GMM model...');
 
-      // Simulate progress for initialization (0-20%)
-      const initProgress = setInterval(() => {
-        setGenerationProgress(prev => Math.min(prev + 1, 20));
-      }, 50);
-
-      setTimeout(() => {
-        clearInterval(initProgress);
-        setGenerationStage('Fitting data distribution...');
-        
-        // Simulate progress for fitting (20-50%)
-        const fitProgress = setInterval(() => {
-          setGenerationProgress(prev => Math.min(prev + 1, 50));
-        }, 100);
-
-        setTimeout(() => {
-          clearInterval(fitProgress);
-          setGenerationStage('Generating synthetic samples...');
-          
-          // Simulate progress for generation (50-90%)
-          const genProgress = setInterval(() => {
-            setGenerationProgress(prev => Math.min(prev + 1, 90));
-          }, 75);
-
-          // Actual data generation
-          generateSyntheticData(dataset, sampleSize)
-            .then((result) => {
-              clearInterval(genProgress);
-              setGenerationStage('Finalizing results...');
-              
-              // Final progress animation (90-100%)
-              const finalProgress = setInterval(() => {
-                setGenerationProgress(prev => {
-                  if (prev >= 100) {
-                    clearInterval(finalProgress);
-                    return 100;
-                  }
-                  return prev + 1;
-                });
-              }, 50);
-
-              setGeneratedData(result);
-              // Update other state variables as needed
-              
-              setTimeout(() => {
-                setIsGenerating(false);
-                setGenerationStage('');
-              }, 500);
-            })
-            .catch((error) => {
-              clearInterval(genProgress);
-              toast.error('Failed to generate synthetic data');
-              setIsGenerating(false);
-              setGenerationProgress(0);
-              setGenerationStage('');
-            });
-        }, 2000);
-      }, 1000);
-
+      const syntheticData = await generateSyntheticData(dataset, sampleSize);
+      
+      // Calculate metrics from synthetic data
+      const metrics = calculateSyntheticMetrics(syntheticData);
+      
+      // Calculate file size
+      const fileSize = calculateSyntheticFileSize(syntheticData);
+      
+      setGeneratedData(syntheticData);
+      setGenerationProgress(100);
+      setGenerationStage('Generation complete!');
+      
+      // Update metrics
+      setGenerationMetrics({
+        fileSize,
+        columnMetrics: metrics.columnMetrics,
+        overallMetrics: metrics.overallMetrics
+      });
+      
+      toast.success("Synthetic data generated successfully!");
+      addNotification(
+        "Generation Complete",
+        "Your synthetic dataset has been generated successfully",
+        "action"
+      );
     } catch (error) {
-      toast.error('Failed to generate synthetic data');
+      console.error('Error generating synthetic data:', error);
+      toast.error("Failed to generate synthetic data");
+      addNotification(
+        "Generation Failed",
+        error instanceof Error ? error.message : "Failed to generate synthetic data",
+        "alert"
+      );
+    } finally {
       setIsGenerating(false);
-      setGenerationProgress(0);
-      setGenerationStage('');
     }
   };
 
