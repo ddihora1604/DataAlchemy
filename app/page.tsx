@@ -677,6 +677,22 @@ export default function Home() {
       const metrics = calculateSyntheticMetrics(syntheticData);
       const fileSize = calculateSyntheticFileSize(syntheticData);
       
+      // Create new dataset entry
+      const newDataset = {
+        id: Date.now(),
+        name: `synthetic_${selectedFile?.name || 'dataset'}_${Date.now()}.csv`,
+        originalDataset: selectedFile?.name || 'Unknown',
+        uploadTime: new Date().toLocaleString(),
+        generationDuration: '< 1 minute', // Or calculate actual duration
+        sampleCount: sampleSize,
+        timestamp: new Date().toLocaleString(),
+        syntheticData: syntheticData
+      };
+
+      // Update local storage with new dataset
+      const existingDatasets = JSON.parse(localStorage.getItem('generatedDatasets') || '[]');
+      localStorage.setItem('generatedDatasets', JSON.stringify([...existingDatasets, newDataset]));
+
       setGeneratedData(syntheticData);
       
       // Only show completion message after reaching 100%

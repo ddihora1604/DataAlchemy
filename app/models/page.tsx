@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion } from "framer-motion"
+import { Brain, Settings2, Shield, ChartBar, Code2, Lightbulb, AlertCircle } from "lucide-react"
 
 export default function ModelInformation() {
   const fadeIn = {
@@ -52,188 +53,209 @@ export default function ModelInformation() {
           Model Information
         </h2>
       </motion.div>
-      
-      <Tabs defaultValue="gan" className="space-y-4">
-        <TabsList className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-1 rounded-xl">
-          <TabsTrigger 
-            value="gan" 
-            className="data-[state=active]:bg-primary/10 transition-all duration-200 rounded-lg"
-          >
-            Tabular GAN
-          </TabsTrigger>
-          <TabsTrigger 
-            value="vae" 
-            className="data-[state=active]:bg-primary/10 transition-all duration-200 rounded-lg"
-          >
-            VAE
-          </TabsTrigger>
-          <TabsTrigger 
-            value="copula" 
-            className="data-[state=active]:bg-primary/10 transition-all duration-200 rounded-lg"
-          >
-            Copula-based Synthesis
-          </TabsTrigger>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 lg:max-w-[400px]">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="technical">Technical Details</TabsTrigger>
+          <TabsTrigger value="parameters">Parameters</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="gan">
+        <TabsContent value="overview">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-primary" />
+                    Purpose
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    The Gaussian Mixture Model generates synthetic data by modeling the underlying probability distribution of numerical features in your dataset.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.1 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-primary" />
+                    Key Features
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <motion.ul
+                    variants={staggeredList}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-2 text-muted-foreground"
+                  >
+                    <motion.li variants={listItem}>• Automatic component selection</motion.li>
+                    <motion.li variants={listItem}>• Handles missing values</motion.li>
+                    <motion.li variants={listItem}>• Data scaling and normalization</motion.li>
+                    <motion.li variants={listItem}>• Preserves statistical relationships</motion.li>
+                  </motion.ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.2 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Advantages
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <motion.ul
+                    variants={staggeredList}
+                    initial="hidden"
+                    animate="visible"
+                    className="space-y-2 text-muted-foreground"
+                  >
+                    <motion.li variants={listItem}>• Privacy-preserving generation</motion.li>
+                    <motion.li variants={listItem}>• Maintains data distributions</motion.li>
+                    <motion.li variants={listItem}>• Efficient computation</motion.li>
+                    <motion.li variants={listItem}>• Scalable to large datasets</motion.li>
+                  </motion.ul>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="technical">
           <motion.div
             variants={cardVariants}
             initial="hidden"
             animate="visible"
           >
-            <Card className="border-primary/10 shadow-lg hover:shadow-primary/5 transition-all duration-300 rounded-xl">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  Generative Adversarial Networks (GANs)
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code2 className="h-5 w-5 text-primary" />
+                  Implementation Details
                 </CardTitle>
-                <CardDescription className="text-base">
-                  Understanding how GANs generate realistic tabular data
+                <CardDescription>
+                  Technical aspects of the Gaussian Mixture Model implementation
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <motion.div variants={staggeredList} initial="hidden" animate="visible">
-                  <motion.div variants={listItem} className="space-y-2">
-                    <h3 className="text-lg font-semibold text-primary/90">How GANs Work</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      GANs consist of two neural networks competing against each other: a generator that creates synthetic data and a discriminator that tries to distinguish between real and synthetic data. Through this adversarial process, the generator learns to create increasingly realistic data.
+              <CardContent>
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-medium mb-2">Preprocessing Pipeline</h4>
+                    <p className="text-muted-foreground">
+                      1. Categorical columns are identified and dropped<br />
+                      2. Missing values are imputed using mean strategy<br />
+                      3. Data is scaled using StandardScaler<br />
+                      4. Optimal number of components is selected using BIC
                     </p>
-                  </motion.div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Model Architecture</h4>
+                    <p className="text-muted-foreground">
+                      The GMM uses a full covariance matrix type with regularization (reg_covar=1e-6) 
+                      and multiple initialization attempts (n_init=10) to ensure stable convergence.
+                    </p>
+                  </div>
 
-                  <motion.div variants={listItem} className="space-y-2 mt-6">
-                    <h3 className="text-lg font-semibold text-primary/90">Strengths</h3>
-                    <motion.ul 
-                      className="list-disc pl-6 text-muted-foreground space-y-2"
-                      variants={staggeredList}
-                    >
-                      <motion.li variants={listItem}>Excellent at capturing complex data distributions</motion.li>
-                      <motion.li variants={listItem}>Can generate highly realistic synthetic data</motion.li>
-                      <motion.li variants={listItem}>Good for handling mixed data types</motion.li>
-                      <motion.li variants={listItem}>Preserves intricate relationships between variables</motion.li>
-                      <motion.li variants={listItem}>Scalable to large datasets</motion.li>
-                    </motion.ul>
-                  </motion.div>
-
-                  <motion.div variants={listItem} className="space-y-2 mt-6">
-                    <h3 className="text-lg font-semibold text-primary/90">Limitations</h3>
-                    <motion.ul 
-                      className="list-disc pl-6 text-muted-foreground space-y-2"
-                      variants={staggeredList}
-                    >
-                      <motion.li variants={listItem}>Training can be unstable and requires careful tuning</motion.li>
-                      <motion.li variants={listItem}>May suffer from mode collapse</motion.li>
-                      <motion.li variants={listItem}>Computationally intensive</motion.li>
-                      <motion.li variants={listItem}>Requires large training datasets</motion.li>
-                    </motion.ul>
-                  </motion.div>
-
-                  <motion.div variants={listItem} className="space-y-2 mt-6">
-                    <h3 className="text-lg font-semibold text-primary/90">Use Cases</h3>
-                    <motion.ul 
-                      className="list-disc pl-6 text-muted-foreground space-y-2"
-                      variants={staggeredList}
-                    >
-                      <motion.li variants={listItem}>Financial transaction data generation</motion.li>
-                      <motion.li variants={listItem}>Healthcare record synthesis</motion.li>
-                      <motion.li variants={listItem}>Customer behavior simulation</motion.li>
-                      <motion.li variants={listItem}>Market research data augmentation</motion.li>
-                      <motion.li variants={listItem}>Testing and development environments</motion.li>
-                    </motion.ul>
-                  </motion.div>
-                </motion.div>
+                  <div>
+                    <h4 className="font-medium mb-2">Generation Process</h4>
+                    <p className="text-muted-foreground">
+                      Synthetic samples are generated by sampling from the fitted GMM 
+                      and then inverse transforming the data back to the original scale.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
         </TabsContent>
 
-        <TabsContent value="vae">
+        <TabsContent value="parameters">
           <motion.div
             variants={cardVariants}
             initial="hidden"
             animate="visible"
           >
-            <Card className="border-primary/10 shadow-lg hover:shadow-primary/5 transition-shadow duration-300">
+            <Card>
               <CardHeader>
-                <CardTitle>Variational Autoencoders (VAEs)</CardTitle>
-                <CardDescription>Learning latent representations for data generation</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5 text-primary" />
+                  Model Parameters
+                </CardTitle>
+                <CardDescription>
+                  Key parameters and their impact on the generation process
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <h3 className="text-lg font-semibold">How VAEs Work</h3>
-                <p className="text-muted-foreground">
-                  VAEs learn a compressed, probabilistic representation of data by encoding it into a latent space and then decoding it back. This architecture allows for both data compression and generation of new samples by sampling from the learned latent space.
-                </p>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Number of Components</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically selected using BIC criterion (1-5 range)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Covariance Type</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Full covariance matrix to capture feature relationships
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Regularization</h4>
+                      <p className="text-sm text-muted-foreground">
+                        reg_covar=1e-6 for numerical stability
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Initialization</h4>
+                      <p className="text-sm text-muted-foreground">
+                        n_init=10 attempts to find optimal starting points
+                      </p>
+                    </div>
+                  </div>
 
-                <h3 className="text-lg font-semibold">Strengths</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Excellent for continuous variables</li>
-                  <li>More stable training compared to GANs</li>
-                  <li>Provides meaningful latent representations</li>
-                  <li>Good at handling missing data</li>
-                  <li>Probabilistic nature allows uncertainty quantification</li>
-                </ul>
-
-                <h3 className="text-lg font-semibold">Limitations</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Generated samples may be slightly blurry/imprecise</li>
-                  <li>Can struggle with discrete variables</li>
-                  <li>Limited by Gaussian assumptions in latent space</li>
-                  <li>May not capture sharp features in data</li>
-                </ul>
-
-                <h3 className="text-lg font-semibold">Use Cases</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Medical imaging data synthesis</li>
-                  <li>Sensor data generation</li>
-                  <li>Anomaly detection</li>
-                  <li>Feature learning and dimensionality reduction</li>
-                  <li>Missing data imputation</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="copula">
-          <motion.div
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <Card className="border-primary/10 shadow-lg hover:shadow-primary/5 transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle>Copula-based Synthesis</CardTitle>
-                <CardDescription>Statistical approach to modeling data dependencies</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <h3 className="text-lg font-semibold">How Copulas Work</h3>
-                <p className="text-muted-foreground">
-                  Copula-based methods separate the modeling of marginal distributions from their dependencies. This allows for flexible modeling of complex relationships while preserving the statistical properties of individual variables.
-                </p>
-
-                <h3 className="text-lg font-semibold">Strengths</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Strong theoretical foundation in statistics</li>
-                  <li>Excellent for preserving correlations</li>
-                  <li>Works well with small datasets</li>
-                  <li>Computationally efficient</li>
-                  <li>Highly interpretable results</li>
-                </ul>
-
-                <h3 className="text-lg font-semibold">Limitations</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>May not capture complex non-linear relationships</li>
-                  <li>Limited by choice of copula family</li>
-                  <li>Less flexible than deep learning approaches</li>
-                  <li>Requires domain expertise for copula selection</li>
-                </ul>
-
-                <h3 className="text-lg font-semibold">Use Cases</h3>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Financial risk modeling</li>
-                  <li>Insurance claim generation</li>
-                  <li>Climate data synthesis</li>
-                  <li>Demographic data generation</li>
-                  <li>Portfolio simulation</li>
-                </ul>
+                  <div className="mt-6">
+                    <Card className="bg-muted/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <AlertCircle className="h-5 w-5 text-primary" />
+                          Limitations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          <li>• Currently supports only numerical features</li>
+                          <li>• Assumes underlying Gaussian distributions</li>
+                          <li>• May not capture complex non-linear relationships</li>
+                          <li>• Memory usage scales with dataset size</li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
