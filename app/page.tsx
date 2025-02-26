@@ -618,51 +618,74 @@ export default function Home() {
   }
 
   const handleGenerate = async () => {
-    if (!dataset) {
-      toast.error("Please upload a dataset first");
-      return;
-    }
-
     try {
       setIsGenerating(true);
-      setGenerationStage('Generating synthetic data using GMM...');
       setGenerationProgress(0);
+      setGenerationStage('Initializing GMM model...');
 
-      const syntheticData = await generateSyntheticData(dataset, sampleSize);
-      
-      // Calculate metrics from synthetic data
-      const metrics = calculateSyntheticMetrics(syntheticData);
-      
-      // Calculate file size
-      const fileSize = calculateSyntheticFileSize(syntheticData);
-      
-      setGeneratedData(syntheticData);
-      setGenerationProgress(100);
-      setGenerationStage('Generation complete!');
-      
-      // Update metrics
-      setGenerationMetrics({
-        fileSize,
-        columnMetrics: metrics.columnMetrics,
-        overallMetrics: metrics.overallMetrics
-      });
-      
-      toast.success("Synthetic data generated successfully!");
-      addNotification(
-        "Generation Complete",
-        "Your synthetic dataset has been generated successfully",
-        "action"
-      );
+      // Simulate progress for initialization (0-20%)
+      const initProgress = setInterval(() => {
+        setGenerationProgress(prev => Math.min(prev + 1, 20));
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(initProgress);
+        setGenerationStage('Fitting data distribution...');
+        
+        // Simulate progress for fitting (20-50%)
+        const fitProgress = setInterval(() => {
+          setGenerationProgress(prev => Math.min(prev + 1, 50));
+        }, 100);
+
+        setTimeout(() => {
+          clearInterval(fitProgress);
+          setGenerationStage('Generating synthetic samples...');
+          
+          // Simulate progress for generation (50-90%)
+          const genProgress = setInterval(() => {
+            setGenerationProgress(prev => Math.min(prev + 1, 90));
+          }, 75);
+
+          // Actual data generation
+          generateSyntheticData(dataset, sampleSize)
+            .then((result) => {
+              clearInterval(genProgress);
+              setGenerationStage('Finalizing results...');
+              
+              // Final progress animation (90-100%)
+              const finalProgress = setInterval(() => {
+                setGenerationProgress(prev => {
+                  if (prev >= 100) {
+                    clearInterval(finalProgress);
+                    return 100;
+                  }
+                  return prev + 1;
+                });
+              }, 50);
+
+              setGeneratedData(result);
+              // Update other state variables as needed
+              
+              setTimeout(() => {
+                setIsGenerating(false);
+                setGenerationStage('');
+              }, 500);
+            })
+            .catch((error) => {
+              clearInterval(genProgress);
+              toast.error('Failed to generate synthetic data');
+              setIsGenerating(false);
+              setGenerationProgress(0);
+              setGenerationStage('');
+            });
+        }, 2000);
+      }, 1000);
+
     } catch (error) {
-      console.error('Error generating synthetic data:', error);
-      toast.error("Failed to generate synthetic data");
-      addNotification(
-        "Generation Failed",
-        error instanceof Error ? error.message : "Failed to generate synthetic data",
-        "alert"
-      );
-    } finally {
+      toast.error('Failed to generate synthetic data');
       setIsGenerating(false);
+      setGenerationProgress(0);
+      setGenerationStage('');
     }
   };
 
@@ -852,9 +875,10 @@ export default function Home() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex justify-center">
                   <Button 
-                    className="flex-1 relative bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    size="lg"
+                    className="w-full sm:w-auto"
                     onClick={handleGenerate}
                     disabled={!dataset || isGenerating}
                   >
@@ -869,16 +893,6 @@ export default function Home() {
                         Generate Data
                       </>
                     )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    disabled={!generatedData || isGenerating}
-                    onClick={handleExport}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Data
                   </Button>
                 </div>
 
@@ -907,24 +921,73 @@ export default function Home() {
                     </div>
                   </div>
                 ) : generatedData ? (
-                  <div className="bg-success/10 rounded-lg p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
-                        <CheckCircle2 className="h-6 w-6 text-success" />
+                  <div className="flex flex-col items-center text-center mt-4">
+                    <div className="bg-success/10 rounded-lg p-4 w-full">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
+                          <CheckCircle2 className="h-6 w-6 text-success" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-success">Generation Complete</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Your synthetic data is ready for export
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-success">Generation Complete</h4>
-                        <p className="text-sm text-muted-foreground">Your synthetic data is ready for export</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-background/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">Generated Samples</p>
-                        <p className="font-medium text-lg">{sampleSize.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-background/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">File Size</p>
-                        <p className="font-medium text-lg">{generationMetrics.fileSize}</p>
+
+                      {/* New Metrics Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                        <div className="bg-primary/5 rounded-lg p-6 relative overflow-hidden">
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                <Shield className="h-4 w-4 text-primary" />
+                              </div>
+                              <h3 className="font-medium">Generated Samples</h3>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-bold">{sampleSize.toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Total synthetic records</p>
+                          </div>
+                          <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent" />
+                        </div>
+
+                        <div className="bg-[hsl(var(--chart-1))]/5 rounded-lg p-6 relative overflow-hidden">
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-1))]/20 flex items-center justify-center">
+                                <Settings2 className="h-4 w-4 text-[hsl(var(--chart-1))]" />
+                              </div>
+                              <h3 className="font-medium">Overall Completeness</h3>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-bold">
+                                {generationMetrics.overallMetrics?.overallCompleteness.toFixed(1)}%
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Data completeness</p>
+                          </div>
+                          <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-1))]/5 to-transparent" />
+                        </div>
+
+                        <div className="bg-[hsl(var(--chart-2))]/5 rounded-lg p-6 relative overflow-hidden">
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-2))]/20 flex items-center justify-center">
+                                <Wand2 className="h-4 w-4 text-[hsl(var(--chart-2))]" />
+                              </div>
+                              <h3 className="font-medium">Unique Ratio</h3>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-bold">
+                                {generationMetrics.overallMetrics?.uniqueRatio.toFixed(1)}%
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">Average unique ratio</p>
+                          </div>
+                          <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-2))]/5 to-transparent" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -953,140 +1016,97 @@ export default function Home() {
       </div>
 
       {generatedData && (
-        <Card className="col-span-2 mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileUp className="h-5 w-5 text-primary" />
-              Generation Insights
-            </CardTitle>
-            <CardDescription>
-              Detailed analysis of your generated synthetic data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Overall Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-primary/5 rounded-lg p-6 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Shield className="h-4 w-4 text-primary" />
-                      </div>
-                      <h3 className="font-medium">Generated Samples</h3>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">{sampleSize.toLocaleString()}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">Total synthetic records</p>
-                  </div>
-                  <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent" />
-                </div>
-
-                <div className="bg-[hsl(var(--chart-1))]/5 rounded-lg p-6 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-1))]/20 flex items-center justify-center">
-                        <Settings2 className="h-4 w-4 text-[hsl(var(--chart-1))]" />
-                      </div>
-                      <h3 className="font-medium">Overall Completeness</h3>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">
-                        {generationMetrics.overallMetrics?.overallCompleteness.toFixed(1)}%
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">Data completeness</p>
-                  </div>
-                  <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-1))]/5 to-transparent" />
-                </div>
-
-                <div className="bg-[hsl(var(--chart-2))]/5 rounded-lg p-6 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-2))]/20 flex items-center justify-center">
-                        <Wand2 className="h-4 w-4 text-[hsl(var(--chart-2))]" />
-                      </div>
-                      <h3 className="font-medium">Unique Ratio</h3>
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">
-                        {generationMetrics.overallMetrics?.uniqueRatio.toFixed(1)}%
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">Average unique ratio</p>
-                  </div>
-                  <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-2))]/5 to-transparent" />
+        <>
+          {/* Export Generated Data Card */}
+          <Card className="col-span-2 mt-6">
+            <CardHeader>
+              <CardTitle>Export Generated Data</CardTitle>
+              <CardDescription>
+                Download your synthetic dataset or analyze its characteristics
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto"
+                  onClick={handleExport}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Data
+                </Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileUp className="h-4 w-4" />
+                  <span>Generated file size: </span>
+                  <span className="font-medium text-foreground">{generationMetrics.fileSize}</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Column-wise Metrics */}
-              <div className="bg-muted/30 rounded-lg p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Column-wise Analysis</h3>
-                    <p className="text-sm text-muted-foreground">Detailed metrics for each generated column</p>
-                  </div>
-                </div>
+          {/* Column-wise Metrics Card - Now Separate */}
+          <Card className="col-span-2 mt-6">
+            <CardHeader>
+              <CardTitle>Column-wise Metrics</CardTitle>
+              <CardDescription>
+                Detailed analysis of each generated column
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {dataset?.columns.map((column) => {
+                  const metrics = generationMetrics.columnMetrics?.[column];
+                  if (!metrics) return null;
 
-                <div className="grid gap-4">
-                  {dataset?.columns.map((column) => {
-                    const metrics = generationMetrics.columnMetrics?.[column];
-                    if (!metrics) return null;
-
-                    return (
-                      <div key={column} className="bg-background/50 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium">{column}</h4>
-                          <div className="text-sm text-muted-foreground">
-                            {metrics.completeness.toFixed(1)}% Complete
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Unique Values</p>
-                            <p className="text-lg font-medium">{metrics.uniqueValues.toLocaleString()}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">Missing Values</p>
-                            <p className="text-lg font-medium">{metrics.missingValues.toLocaleString()}</p>
-                          </div>
-                          {metrics.min !== null && metrics.max !== null && (
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Range</p>
-                              <p className="text-lg font-medium">
-                                {metrics.min.toFixed(2)} - {metrics.max.toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                          {metrics.mean !== null && (
-                            <div className="space-y-1">
-                              <p className="text-sm text-muted-foreground">Mean</p>
-                              <p className="text-lg font-medium">{metrics.mean.toFixed(2)}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3">
-                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full transition-all duration-500"
-                              style={{ width: `${metrics.completeness}%` }}
-                            />
-                          </div>
+                  return (
+                    <div key={column} className="bg-muted/30 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium">{column}</h4>
+                        <div className="text-sm text-muted-foreground">
+                          {metrics.completeness.toFixed(1)}% Complete
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Unique Values</p>
+                          <p className="text-lg font-medium">{metrics.uniqueValues.toLocaleString()}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Missing Values</p>
+                          <p className="text-lg font-medium">{metrics.missingValues.toLocaleString()}</p>
+                        </div>
+                        {metrics.min !== null && metrics.max !== null && (
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Range</p>
+                            <p className="text-lg font-medium">
+                              {metrics.min.toFixed(2)} - {metrics.max.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                        {metrics.mean !== null && (
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Mean</p>
+                            <p className="text-lg font-medium">{metrics.mean.toFixed(2)}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            style={{ width: `${metrics.completeness}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {uploadedFileDetails && uploadSuccessOpen && (
