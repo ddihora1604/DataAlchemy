@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { processCSV, type Dataset, determineOptimalModel, generateSyntheticData } from "@/lib/data-service"
 import { useNotifications } from "@/contexts/notification-context"
 import { UploadSuccessDialog } from "@/components/upload-success-dialog"
+import Papa from "papaparse"
 
 const UploadSuccessPopup = ({ fileName, isClosing }: { 
   fileName: string;
@@ -36,6 +37,68 @@ const UploadSuccessPopup = ({ fileName, isClosing }: {
     </div>
   </div>
 );
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const size = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+  
+  return `${size} ${sizes[i]}`;
+};
+
+const calculateColumnStats = (data: any[][], colIndex: number) => {
+  // Extract column values
+  const columnValues = data.map(row => row[colIndex]);
+  
+  // Count missing values (null, undefined, empty string, or NaN)
+  const missingCount = columnValues.filter(val => 
+    val === null || 
+    val === undefined || 
+    val === '' || 
+    (typeof val === 'number' && isNaN(val))
+  ).length - 1;
+  
+  // Get non-null values for further processing
+  const nonNullValues = columnValues.filter(val => 
+    val !== null && 
+    val !== undefined && 
+    val !== '' && 
+    !(typeof val === 'number' && isNaN(val))
+  );
+  
+  // Count unique values (excluding missing values)
+  const uniqueValues = new Set(nonNullValues);
+  
+  // Calculate completeness percentage
+  const completeness = ((columnValues.length - missingCount) / columnValues.length) * 100;
+
+  // Calculate numeric statistics if applicable
+  let numericStats = null;
+  if (nonNullValues.length > 0 && nonNullValues.every(val => !isNaN(Number(val)))) {
+    const numbers = nonNullValues.map(v => Number(v));
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    const mean = sum / numbers.length;
+    const sortedNums = [...numbers].sort((a, b) => a - b);
+    
+    numericStats = {
+      min: sortedNums[0],
+      max: sortedNums[sortedNums.length - 1],
+      mean: mean,
+      median: sortedNums[Math.floor(sortedNums.length / 2)]
+    };
+  }
+
+  return {
+    uniqueCount: uniqueValues.size,
+    missingCount,
+    completeness,
+    numericStats
+  };
+};
 
 // Update the DatasetParameters component
 const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) => (
@@ -69,8 +132,8 @@ const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) 
         </div>
         <div className="bg-muted/50 rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">File Size</p>
-          <p className="font-medium">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-          <p className="text-xs text-muted-foreground mt-1">Compressed</p>
+          <p className="font-medium">{formatFileSize(file.size)}</p>
+          <p className="text-xs text-muted-foreground mt-1">Original Size</p>
         </div>
       </div>
 
@@ -79,11 +142,8 @@ const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) 
         <h4 className="text-sm font-medium mb-3">Column Details</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {dataset.columns.map((column, index) => {
-            const columnValues = dataset.data.map(row => row[index]);
-            const missingCount = columnValues.filter(val => 
-              val === null || val === undefined || val === ''
-            ).length;
-            const missingPercentage = (missingCount / dataset.data.length) * 100;
+            const columnType = inferColumnType(dataset.data, index);
+            const stats = calculateColumnStats(dataset.data, index);
             
             return (
               <div key={column} className="bg-muted/30 rounded-lg p-4 space-y-3">
@@ -91,7 +151,7 @@ const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) 
                   <div className="space-y-1">
                     <p className="font-medium">{column}</p>
                     <p className="text-xs text-muted-foreground">
-                      {inferColumnType(dataset.data, index)}
+                      {columnType}
                     </p>
                   </div>
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -105,29 +165,48 @@ const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) 
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Data Completeness</span>
                     <span className="font-medium">
-                      {(100 - missingPercentage).toFixed(1)}%
+                      {stats.completeness.toFixed(1)}%
                     </span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-primary rounded-full transition-all duration-500"
-                      style={{ width: `${100 - missingPercentage}%` }}
+                      style={{ width: `${stats.completeness}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="bg-background/50 rounded p-2">
-                    <p className="text-muted-foreground">Unique Values</p>
-                    <p className="font-medium">
-                      {new Set(columnValues).size}
+                    <p className="text-xs text-muted-foreground">Unique Values</p>
+                    <p className="text-sm font-medium">
+                      {stats.uniqueCount.toLocaleString()}
                     </p>
                   </div>
                   <div className="bg-background/50 rounded p-2">
-                    <p className="text-muted-foreground">Missing Values</p>
-                    <p className="font-medium">{missingCount}</p>
+                    <p className="text-xs text-muted-foreground">Missing Values</p>
+                    <p className="text-sm font-medium">
+                      {stats.missingCount.toLocaleString()}
+                    </p>
                   </div>
                 </div>
+
+                {stats.numericStats && (
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="bg-background/50 rounded p-2">
+                      <p className="text-xs text-muted-foreground">Range</p>
+                      <p className="text-sm font-medium">
+                        {stats.numericStats.min.toFixed(1)} - {stats.numericStats.max.toFixed(1)}
+                      </p>
+                    </div>
+                    <div className="bg-background/50 rounded p-2">
+                      <p className="text-xs text-muted-foreground">Mean</p>
+                      <p className="text-sm font-medium">
+                        {stats.numericStats.mean.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -140,19 +219,36 @@ const DatasetParameters = ({ dataset, file }: { dataset: Dataset, file: File }) 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-muted/30 rounded-lg p-3">
             <p className="text-xs text-muted-foreground">Completeness</p>
-            <p className="text-xl font-semibold mt-1">98%</p>
+            <p className="text-xl font-semibold mt-1">
+              {(dataset.columns.reduce((acc, _, i) => 
+                acc + calculateColumnStats(dataset.data, i).completeness, 0
+              ) / dataset.columns.length).toFixed(1)}%
+            </p>
           </div>
           <div className="bg-muted/30 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Consistency</p>
-            <p className="text-xl font-semibold mt-1">95%</p>
+            <p className="text-xs text-muted-foreground">Unique Ratio</p>
+            <p className="text-xl font-semibold mt-1">
+              {(dataset.columns.reduce((acc, _, i) => {
+                const stats = calculateColumnStats(dataset.data, i);
+                return acc + (stats.uniqueCount / dataset.data.length) * 100;
+              }, 0) / dataset.columns.length).toFixed(1)}%
+            </p>
           </div>
           <div className="bg-muted/30 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Validity</p>
-            <p className="text-xl font-semibold mt-1">97%</p>
+            <p className="text-xs text-muted-foreground">Numeric Columns</p>
+            <p className="text-xl font-semibold mt-1">
+              {dataset.columns.filter((_, i) => 
+                inferColumnType(dataset.data, i) === 'Numeric'
+              ).length}
+            </p>
           </div>
           <div className="bg-muted/30 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Accuracy</p>
-            <p className="text-xl font-semibold mt-1">96%</p>
+            <p className="text-xs text-muted-foreground">Categorical Columns</p>
+            <p className="text-xl font-semibold mt-1">
+              {dataset.columns.filter((_, i) => 
+                inferColumnType(dataset.data, i) === 'Categorical'
+              ).length}
+            </p>
           </div>
         </div>
       </div>
@@ -168,7 +264,7 @@ const inferColumnType = (data: any[][], colIndex: number): string => {
   if (nonNullSample.every(val => typeof val === 'number')) return 'Numeric';
   if (nonNullSample.every(val => typeof val === 'boolean')) return 'Boolean';
   if (nonNullSample.every(val => !isNaN(Date.parse(val)))) return 'Date';
-  return 'Text';
+  return 'Categorical';
 };
 
 const calculateMissingPercentage = (data: any[][], colIndex: number): number => {
@@ -177,6 +273,204 @@ const calculateMissingPercentage = (data: any[][], colIndex: number): number => 
     row[colIndex] === null || row[colIndex] === undefined || row[colIndex] === ''
   ).length;
   return Math.round((missingCount / totalRows) * 100);
+};
+
+// Add utility functions for metrics calculation
+const calculateDataQuality = (originalData: any[][], syntheticData: string): number => {
+  // Parse synthetic data
+  const parsedSynthetic = Papa.parse(syntheticData, { header: true }).data;
+  
+  // Calculate various quality metrics
+  const completeness = calculateCompleteness(parsedSynthetic);
+  const rangePreservation = calculateRangePreservation(originalData, parsedSynthetic);
+  const distributionSimilarity = calculateDistributionSimilarity(originalData, parsedSynthetic);
+  
+  // Weighted average of quality metrics
+  const qualityScore = (completeness * 0.4 + rangePreservation * 0.3 + distributionSimilarity * 0.3);
+  return Math.round(qualityScore * 100);
+};
+
+const calculateCompleteness = (data: any[]): number => {
+  const totalFields = Object.keys(data[0] || {}).length * data.length;
+  const nonNullFields = data.reduce((acc, row) => {
+    return acc + Object.values(row).filter(val => 
+      val !== null && val !== undefined && val !== ''
+    ).length;
+  }, 0);
+  return nonNullFields / totalFields;
+};
+
+const calculateRangePreservation = (originalData: any[][], syntheticData: any[]): number => {
+  const originalRanges = calculateColumnRanges(originalData);
+  const syntheticRanges = calculateColumnRanges(syntheticData);
+  
+  let totalPreservation = 0;
+  let numericColumns = 0;
+  
+  Object.keys(originalRanges).forEach(col => {
+    if (syntheticRanges[col]) {
+      const origRange = originalRanges[col].max - originalRanges[col].min;
+      const synthRange = syntheticRanges[col].max - syntheticRanges[col].min;
+      if (origRange !== 0) {
+        totalPreservation += Math.min(synthRange / origRange, 1);
+        numericColumns++;
+      }
+    }
+  });
+  
+  return numericColumns > 0 ? totalPreservation / numericColumns : 1;
+};
+
+const calculateColumnRanges = (data: any[]): Record<string, { min: number; max: number }> => {
+  const ranges: Record<string, { min: number; max: number }> = {};
+  
+  if (Array.isArray(data) && data.length > 0) {
+    const columns = Array.isArray(data[0]) ? 
+      Array.from({ length: data[0].length }, (_, i) => i.toString()) : 
+      Object.keys(data[0]);
+    
+    columns.forEach(col => {
+      const values = Array.isArray(data[0]) ?
+        data.map(row => parseFloat(row[parseInt(col)])).filter(v => !isNaN(v)) :
+        data.map(row => parseFloat(row[col])).filter(v => !isNaN(v));
+      
+      if (values.length > 0) {
+        ranges[col] = {
+          min: Math.min(...values),
+          max: Math.max(...values)
+        };
+      }
+    });
+  }
+  
+  return ranges;
+};
+
+const calculateDistributionSimilarity = (originalData: any[][], syntheticData: any[]): number => {
+  // Simple distribution similarity based on quartile comparison
+  let totalSimilarity = 0;
+  let numericColumns = 0;
+  
+  const getQuartiles = (values: number[]) => {
+    const sorted = values.sort((a, b) => a - b);
+    return {
+      q1: sorted[Math.floor(sorted.length * 0.25)],
+      q2: sorted[Math.floor(sorted.length * 0.5)],
+      q3: sorted[Math.floor(sorted.length * 0.75)]
+    };
+  };
+  
+  const columns = Array.from({ length: originalData[0].length }, (_, i) => i);
+  
+  columns.forEach(colIndex => {
+    const originalValues = originalData.map(row => parseFloat(row[colIndex])).filter(v => !isNaN(v));
+    const syntheticValues = syntheticData.map(row => {
+      const val = Object.values(row)[colIndex];
+      return parseFloat(val as string);
+    }).filter(v => !isNaN(v));
+    
+    if (originalValues.length > 0 && syntheticValues.length > 0) {
+      const origQuartiles = getQuartiles(originalValues);
+      const synthQuartiles = getQuartiles(syntheticValues);
+      
+      const similarity = 1 - (
+        Math.abs(origQuartiles.q1 - synthQuartiles.q1) / Math.abs(origQuartiles.q1) +
+        Math.abs(origQuartiles.q2 - synthQuartiles.q2) / Math.abs(origQuartiles.q2) +
+        Math.abs(origQuartiles.q3 - synthQuartiles.q3) / Math.abs(origQuartiles.q3)
+      ) / 3;
+      
+      totalSimilarity += Math.max(0, Math.min(1, similarity));
+      numericColumns++;
+    }
+  });
+  
+  return numericColumns > 0 ? totalSimilarity / numericColumns : 1;
+};
+
+const calculateSyntheticFileSize = (data: string): string => {
+  const bytes = new Blob([data]).size;
+  return formatFileSize(bytes);
+};
+
+const calculateSyntheticMetrics = (syntheticData: string) => {
+  // Parse the synthetic data
+  const parsedData = Papa.parse(syntheticData, { header: true }).data as Record<string, string>[];
+  const columns = Object.keys(parsedData[0] || {});
+  
+  // Initialize metrics
+  const columnMetrics: Record<string, {
+    uniqueValues: number,
+    missingValues: number,
+    completeness: number,
+    range: number | null,
+    min: number | null,
+    max: number | null,
+    mean: number | null
+  }> = {};
+  
+  // Calculate metrics for each column
+  columns.forEach(column => {
+    const values = parsedData.map(row => row[column]);
+    
+    // Count missing values
+    const missingValues = values.filter(val => 
+      val === null || 
+      val === undefined || 
+      val === '' || 
+      (typeof val === 'number' && isNaN(val))
+    ).length - 1;
+    
+    // Get non-missing values
+    const nonMissingValues = values.filter(val => 
+      val !== null && 
+      val !== undefined && 
+      val !== '' && 
+      !(typeof val === 'number' && isNaN(val))
+    );
+    
+    // Count unique values
+    const uniqueValues = new Set(nonMissingValues).size;
+    
+    // Calculate completeness
+    const completeness = ((values.length - missingValues) / values.length) * 100;
+    
+    // Calculate range, min, max and mean for numeric columns
+    let range = null;
+    let min = null;
+    let max = null;
+    let mean = null;
+    
+    if (nonMissingValues.length > 0 && nonMissingValues.every(val => !isNaN(Number(val)))) {
+      const numbers = nonMissingValues.map(v => Number(v));
+      min = Math.min(...numbers);
+      max = Math.max(...numbers);
+      range = max - min;
+      mean = numbers.reduce((a, b) => a + b, 0) / numbers.length;
+    }
+    
+    columnMetrics[column] = {
+      uniqueValues,
+      missingValues,
+      completeness,
+      range,
+      min,
+      max,
+      mean
+    };
+  });
+  
+  // Calculate overall metrics
+  const overallMetrics = {
+    uniqueRatio: Object.values(columnMetrics).reduce((acc, col) => 
+      acc + (col.uniqueValues / parsedData.length), 0) / columns.length * 100,
+    overallCompleteness: Object.values(columnMetrics).reduce((acc, col) => 
+      acc + col.completeness, 0) / columns.length
+  };
+  
+  return {
+    columnMetrics,
+    overallMetrics
+  };
 };
 
 export default function Home() {
@@ -199,6 +493,24 @@ export default function Home() {
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStage, setGenerationStage] = useState('')
   const [isPopupClosing, setIsPopupClosing] = useState(false)
+  const [generationMetrics, setGenerationMetrics] = useState<{
+    fileSize: string;
+    columnMetrics?: Record<string, {
+      uniqueValues: number;
+      missingValues: number;
+      completeness: number;
+      range: number | null;
+      min: number | null;
+      max: number | null;
+      mean: number | null;
+    }>;
+    overallMetrics?: {
+      uniqueRatio: number;
+      overallCompleteness: number;
+    };
+  }>({
+    fileSize: '0 KB'
+  })
 
   const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -289,8 +601,7 @@ export default function Home() {
       addNotification(
         "Dataset Uploaded",
         `Successfully processed ${file.name}`,
-        "action",
-        true
+        "action"
       )
     } catch (error) {
       console.error("Error processing file:", error)
@@ -298,8 +609,7 @@ export default function Home() {
       addNotification(
         "Upload Error",
         "Failed to process the file. Please ensure it's a valid CSV.",
-        "alert",
-        true
+        "alert"
       )
       setSelectedFile(null)
     } finally {
@@ -320,9 +630,22 @@ export default function Home() {
 
       const syntheticData = await generateSyntheticData(dataset, sampleSize);
       
+      // Calculate metrics from synthetic data
+      const metrics = calculateSyntheticMetrics(syntheticData);
+      
+      // Calculate file size
+      const fileSize = calculateSyntheticFileSize(syntheticData);
+      
       setGeneratedData(syntheticData);
       setGenerationProgress(100);
       setGenerationStage('Generation complete!');
+      
+      // Update metrics
+      setGenerationMetrics({
+        fileSize,
+        columnMetrics: metrics.columnMetrics,
+        overallMetrics: metrics.overallMetrics
+      });
       
       toast.success("Synthetic data generated successfully!");
       addNotification(
@@ -594,22 +917,14 @@ export default function Home() {
                         <p className="text-sm text-muted-foreground">Your synthetic data is ready for export</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="bg-background/50 rounded-lg p-3">
                         <p className="text-xs text-muted-foreground">Generated Samples</p>
                         <p className="font-medium text-lg">{sampleSize.toLocaleString()}</p>
                       </div>
                       <div className="bg-background/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">Time Taken</p>
-                        <p className="font-medium text-lg">1m 23s</p>
-                      </div>
-                      <div className="bg-background/50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground">Data Quality</p>
-                        <p className="font-medium text-lg">98%</p>
-                      </div>
-                      <div className="bg-background/50 rounded-lg p-3">
                         <p className="text-xs text-muted-foreground">File Size</p>
-                        <p className="font-medium text-lg">2.4 MB</p>
+                        <p className="font-medium text-lg">{generationMetrics.fileSize}</p>
                       </div>
                     </div>
                   </div>
@@ -650,7 +965,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Quality Metrics */}
+              {/* Overall Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-primary/5 rounded-lg p-6 relative overflow-hidden">
                   <div className="relative z-10">
@@ -658,30 +973,30 @@ export default function Home() {
                       <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                         <Shield className="h-4 w-4 text-primary" />
                       </div>
-                      <h3 className="font-medium">Privacy Score</h3>
+                      <h3 className="font-medium">Generated Samples</h3>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">96</span>
-                      <span className="text-sm text-muted-foreground">/100</span>
+                      <span className="text-3xl font-bold">{sampleSize.toLocaleString()}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">High privacy preservation</p>
+                    <p className="text-sm text-muted-foreground mt-1">Total synthetic records</p>
                   </div>
                   <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent" />
                 </div>
 
-                <div className="bg-[hsl(var(--chart-1))])/5 rounded-lg p-6 relative overflow-hidden">
+                <div className="bg-[hsl(var(--chart-1))]/5 rounded-lg p-6 relative overflow-hidden">
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-1))]/20 flex items-center justify-center">
                         <Settings2 className="h-4 w-4 text-[hsl(var(--chart-1))]" />
                       </div>
-                      <h3 className="font-medium">Statistical Similarity</h3>
+                      <h3 className="font-medium">Overall Completeness</h3>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">94</span>
-                      <span className="text-sm text-muted-foreground">/100</span>
+                      <span className="text-3xl font-bold">
+                        {generationMetrics.overallMetrics?.overallCompleteness.toFixed(1)}%
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">Excellent data fidelity</p>
+                    <p className="text-sm text-muted-foreground mt-1">Data completeness</p>
                   </div>
                   <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-1))]/5 to-transparent" />
                 </div>
@@ -692,63 +1007,81 @@ export default function Home() {
                       <div className="h-8 w-8 rounded-full bg-[hsl(var(--chart-2))]/20 flex items-center justify-center">
                         <Wand2 className="h-4 w-4 text-[hsl(var(--chart-2))]" />
                       </div>
-                      <h3 className="font-medium">ML Utility</h3>
+                      <h3 className="font-medium">Unique Ratio</h3>
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">92</span>
-                      <span className="text-sm text-muted-foreground">/100</span>
+                      <span className="text-3xl font-bold">
+                        {generationMetrics.overallMetrics?.uniqueRatio.toFixed(1)}%
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">High model performance</p>
+                    <p className="text-sm text-muted-foreground mt-1">Average unique ratio</p>
                   </div>
                   <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-[hsl(var(--chart-2))]/5 to-transparent" />
                 </div>
               </div>
 
-              {/* Generation Summary */}
+              {/* Column-wise Metrics */}
               <div className="bg-muted/30 rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <CheckCircle2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Generation Summary</h3>
-                    <p className="text-sm text-muted-foreground">Key highlights from the generation process</p>
+                    <h3 className="font-medium">Column-wise Analysis</h3>
+                    <p className="text-sm text-muted-foreground">Detailed metrics for each generated column</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-1))]" />
-                      <p className="text-sm font-medium">Column Types</p>
-                    </div>
-                    <p className="text-2xl font-bold">8</p>
-                    <p className="text-xs text-muted-foreground">Mixed data types</p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-2))]" />
-                      <p className="text-sm font-medium">Correlations</p>
-                    </div>
-                    <p className="text-2xl font-bold">95%</p>
-                    <p className="text-xs text-muted-foreground">Preserved relationships</p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-3))]" />
-                      <p className="text-sm font-medium">Data Range</p>
-                    </div>
-                    <p className="text-2xl font-bold">98%</p>
-                    <p className="text-xs text-muted-foreground">Distribution match</p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-4))]" />
-                      <p className="text-sm font-medium">Uniqueness</p>
-                    </div>
-                    <p className="text-2xl font-bold">93%</p>
-                    <p className="text-xs text-muted-foreground">Distinct patterns</p>
-                  </div>
+                <div className="grid gap-4">
+                  {dataset?.columns.map((column) => {
+                    const metrics = generationMetrics.columnMetrics?.[column];
+                    if (!metrics) return null;
+
+                    return (
+                      <div key={column} className="bg-background/50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium">{column}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {metrics.completeness.toFixed(1)}% Complete
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Unique Values</p>
+                            <p className="text-lg font-medium">{metrics.uniqueValues.toLocaleString()}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Missing Values</p>
+                            <p className="text-lg font-medium">{metrics.missingValues.toLocaleString()}</p>
+                          </div>
+                          {metrics.min !== null && metrics.max !== null && (
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Range</p>
+                              <p className="text-lg font-medium">
+                                {metrics.min.toFixed(2)} - {metrics.max.toFixed(2)}
+                              </p>
+                            </div>
+                          )}
+                          {metrics.mean !== null && (
+                            <div className="space-y-1">
+                              <p className="text-sm text-muted-foreground">Mean</p>
+                              <p className="text-lg font-medium">{metrics.mean.toFixed(2)}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all duration-500"
+                              style={{ width: `${metrics.completeness}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
