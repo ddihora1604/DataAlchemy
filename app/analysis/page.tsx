@@ -16,6 +16,7 @@ import {
   ScatterChart, 
   Scatter 
 } from 'recharts'
+import { useData } from "@/contexts/data-context"
 
 const demoData = {
   distributions: Array.from({ length: 50 }, (_, i) => ({
@@ -75,6 +76,26 @@ const defaultAxisProps = {
 }
 
 export default function Analysis() {
+  const { dataset, generatedData, generationMetrics } = useData()
+
+  // If no data is available, show a message
+  if (!dataset || !generatedData) {
+    return (
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Numerical Analysis</h2>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">
+              Please generate synthetic data in the Dashboard first to view analysis
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

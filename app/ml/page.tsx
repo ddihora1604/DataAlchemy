@@ -19,6 +19,7 @@ import {
   PolarAngleAxis, 
   PolarRadiusAxis 
 } from 'recharts'
+import { useData } from "@/contexts/data-context"
 
 const demoData = {
   trainingProgress: Array.from({ length: 20 }, (_, i) => ({
@@ -57,6 +58,23 @@ const defaultPolarAxisProps = {
 }
 
 export default function MachineLearning() {
+  const { dataset, generatedData } = useData()
+
+  if (!dataset || !generatedData) {
+    return (
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <h2 className="text-3xl font-bold tracking-tight">Machine Learning</h2>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground">
+              Generate synthetic data first to view ML metrics
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

@@ -12,6 +12,7 @@ import { processCSV, type Dataset, determineOptimalModel, generateSyntheticData 
 import { useNotifications } from "@/contexts/notification-context"
 import { UploadSuccessDialog } from "@/components/upload-success-dialog"
 import Papa from "papaparse"
+import { useData } from "@/contexts/data-context"
 
 const UploadSuccessPopup = ({ fileName, isClosing }: { 
   fileName: string;
@@ -474,12 +475,19 @@ const calculateSyntheticMetrics = (syntheticData: string) => {
 };
 
 export default function Home() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const {
+    selectedFile,
+    setSelectedFile,
+    dataset,
+    setDataset,
+    generatedData,
+    setGeneratedData,
+    generationMetrics,
+    setGenerationMetrics,
+  } = useData()
   const [selectedModel, setSelectedModel] = useState("vae")
   const [sampleSize, setSampleSize] = useState(1000)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [dataset, setDataset] = useState<Dataset | null>(null)
-  const [generatedData, setGeneratedData] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { addNotification } = useNotifications()
   const [uploadSuccessOpen, setUploadSuccessOpen] = useState(false)
@@ -493,24 +501,6 @@ export default function Home() {
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStage, setGenerationStage] = useState('')
   const [isPopupClosing, setIsPopupClosing] = useState(false)
-  const [generationMetrics, setGenerationMetrics] = useState<{
-    fileSize: string;
-    columnMetrics?: Record<string, {
-      uniqueValues: number;
-      missingValues: number;
-      completeness: number;
-      range: number | null;
-      min: number | null;
-      max: number | null;
-      mean: number | null;
-    }>;
-    overallMetrics?: {
-      uniqueRatio: number;
-      overallCompleteness: number;
-    };
-  }>({
-    fileSize: '0 KB'
-  })
 
   const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
