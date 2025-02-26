@@ -625,19 +625,61 @@ export default function Home() {
 
     try {
       setIsGenerating(true);
-      setGenerationStage('Generating synthetic data using GMM...');
+      setGenerationStage('Generating synthetic data...');
       setGenerationProgress(0);
 
+      // Function to animate progress smoothly
+      const animateProgress = () => {
+        const duration = 3000; // Total animation duration in ms
+        const startTime = Date.now();
+        let lastProgress = 0;
+        let animationFrame: number;
+
+        const animate = () => {
+          const currentTime = Date.now();
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Use easeInOut for smooth acceleration and deceleration
+          const easeProgress = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          
+          // Calculate current progress (0-100)
+          const currentProgress = Math.floor(easeProgress * 100); // Now goes up to 100%
+
+          // Only update if progress has increased
+          if (currentProgress > lastProgress) {
+            lastProgress = currentProgress;
+            setGenerationProgress(currentProgress);
+          }
+
+          if (progress < 1) {
+            animationFrame = requestAnimationFrame(animate);
+          }
+        };
+
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+      };
+
+      // Start the progress animation
+      const stopAnimation = animateProgress();
+
+      // Generate the actual data
       const syntheticData = await generateSyntheticData(dataset, sampleSize);
       
+      // Stop the animation and ensure we're at 100%
+      stopAnimation();
+      setGenerationProgress(100);
+
       // Calculate metrics from synthetic data
       const metrics = calculateSyntheticMetrics(syntheticData);
-      
-      // Calculate file size
       const fileSize = calculateSyntheticFileSize(syntheticData);
       
       setGeneratedData(syntheticData);
-      setGenerationProgress(100);
+      
+      // Only show completion message after reaching 100%
       setGenerationStage('Generation complete!');
       
       // Update metrics
