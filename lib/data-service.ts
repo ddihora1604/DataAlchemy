@@ -109,26 +109,12 @@ interface ModelChoice {
 }
 
 export const determineOptimalModel = async (dataset: Dataset): Promise<ModelChoice> => {
-  // Analyze dataset characteristics
-  const characteristics = analyzeDataset(dataset)
-  
-  if (characteristics.hasHighDimensionality && characteristics.hasContinuousData) {
-    return {
-      model: "Variational Autoencoder (VAE)",
-      explanation: "VAE was selected due to high-dimensional continuous data, offering efficient dimensionality reduction and smooth interpolation capabilities."
-    }
-  } else if (characteristics.hasComplexRelationships && characteristics.hasMultipleTypes) {
-    return {
-      model: "Tabular GAN",
-      explanation: "GAN was chosen for its ability to handle mixed data types and capture complex relationships between variables."
-    }
-  } else {
-    return {
-      model: "Copula-based Synthesis",
-      explanation: "Copula-based synthesis was selected for its robust statistical properties and ability to preserve correlations in simpler datasets."
-    }
-  }
-}
+  // TODO: Implement your model selection logic here
+  return {
+    model: "Default Model",
+    explanation: "Default model selected for data synthesis."
+  };
+};
 
 interface DataCharacteristics {
   hasHighDimensionality: boolean;
@@ -176,29 +162,52 @@ const hasComplexCorrelations = (correlations: number[][]): boolean => {
   return true
 }
 
-export const generateSyntheticData = async (dataset: Dataset, numSamples: number): Promise<string> => {
+export const generateSyntheticData = async (file: File, numSamples: number): Promise<any> => {
   try {
+    console.log('Starting synthetic data generation...', { numSamples });
+    console.log('File:', file.name, 'Size:', file.size);
+    
+    const formData = new FormData();
+    const blob = new Blob([file], { type: file.type });
+    formData.append('file', blob, file.name);
+    formData.append('numSamples', numSamples.toString());
+
+    console.log('Sending request to generate endpoint with sample size:', numSamples);
     const response = await fetch('/api/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: dataset.data,
-        columns: dataset.columns,
-        numSamples: numSamples
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'Failed to generate synthetic data');
+      const responseData = await response.json();
+      console.error('Error response from server:', responseData);
+      throw new Error(
+        responseData.details || 
+        responseData.error || 
+        'Failed to generate synthetic data'
+      );
     }
 
-    const result = await response.json();
-    return result.data;
+    // Get the synthetic data file from the public directory
+    const syntheticDataResponse = await fetch('/dataset_SYNTHETIC.csv');
+    if (!syntheticDataResponse.ok) {
+      throw new Error('Failed to fetch synthetic data file');
+    }
+
+    const syntheticDataBlob = await syntheticDataResponse.blob();
+    
+    console.log('Successfully generated synthetic data');
+    return {
+      success: true,
+      data: syntheticDataBlob,
+      visualizations: {
+        distributions: '/distributions.png',
+        correlations: '/correlation_matrix.png',
+        bic_aic: '/bic_aic_plot.png'
+      }
+    };
   } catch (error) {
-    console.error('Error generating synthetic data:', error);
+    console.error('Error in generateSyntheticData:', error);
     throw error;
   }
 };

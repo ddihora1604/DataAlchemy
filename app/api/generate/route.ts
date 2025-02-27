@@ -1,81 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { writeFile, mkdir } from 'fs/promises';
 import { spawn } from 'child_process';
-import os from 'os';
+import path from 'path';
 
-export async function POST(req: NextRequest) {
-  try {
-    const { data, columns, numSamples } = await req.json();
-    
-    // Create a temporary directory for processing
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gmm-'));
-    
-    // Save the input data as CSV
-    const inputPath = path.join(tempDir, 'input.csv');
-    const csvContent = [
-      columns.join(','),
-      ...data.map((row: any[]) => row.join(','))
-    ].join('\n');
-    
-    await fs.writeFile(inputPath, csvContent);
-    
-    // Run the GMM model
-    const pythonScript = path.join(process.cwd(), 'app/ml/GMM.py');
-    
-    return new Promise((resolve, reject) => {
-      const process = spawn('python', [
-        pythonScript,
-        '--input', inputPath,
-        '--output', path.join(tempDir, 'output.csv'),
-        '--samples', numSamples.toString()
-      ]);
-      
-      let outputData = '';
-      let errorData = '';
-      
-      process.stdout.on('data', (data) => {
-        outputData += data.toString();
-      });
-      
-      process.stderr.on('data', (data) => {
-        errorData += data.toString();
-      });
-      
-      process.on('close', async (code) => {
-        if (code !== 0) {
-          resolve(NextResponse.json({ 
-            error: 'GMM generation failed', 
-            details: errorData 
-          }, { status: 500 }));
-          return;
+export async function POST(request: NextRequest) {
+    try {
+        const formData = await request.formData();
+        const file = formData.get('file');
+        const numSamples = formData.get('numSamples');
+
+        if (!file || !(file instanceof Blob)) {
+            return NextResponse.json({ error: 'No valid file uploaded' }, { status: 400 });
         }
-        
-        try {
-          // Read the generated data
-          const outputPath = path.join(tempDir, 'output.csv');
-          const generatedData = await fs.readFile(outputPath, 'utf-8');
-          
-          // Clean up temporary files
-          await fs.rm(tempDir, { recursive: true, force: true });
-          
-          resolve(NextResponse.json({ 
-            success: true,
-            data: generatedData,
-            message: 'Synthetic data generated successfully'
-          }));
-        } catch (error) {
-          resolve(NextResponse.json({ 
-            error: 'Failed to read generated data',
-            details: error
-          }, { status: 500 }));
+
+        if (!numSamples || isNaN(Number(numSamples))) {
+            return NextResponse.json({ error: 'Invalid number of samples' }, { status: 400 });
         }
-      });
-    });
-  } catch (error) {
-    return NextResponse.json({ 
-      error: 'Failed to process request',
-      details: error
-    }, { status: 500 });
-  }
+
+        // Create necessary directories
+        const uploadsDir = path.join(process.cwd(), 'uploads');
+        const publicDir = path.join(process.cwd(), 'public');
+        await mkdir(uploadsDir, { recursive: true });
+        await mkdir(publicDir, { recursive: true });
+
+        // Save the uploaded file
+        const filePath = path.join(uploadsDir, 'dataset.csv');
+        const arrayBuffer = await file.arrayBuffer();
+        await writeFile(filePath, new Uint8Array(arrayBuffer));
+
+        // Run the Python script with the specified number of samples
+        return new Promise((resolve) => {
+            const pythonProcess = spawn('python', [
+                'app/ml/GMM_Model.py',
+                '--input', filePath,
+                '--samples', numSamples.toString(),
+                '--public_dir', publicDir
+            ]);
+
+            let stdoutData = '';
+            let stderrData = '';
+
+            pythonProcess.stdout.on('data', (data) => {
+                stdoutData += data.toString();
+                console.log('Python stdout:', data.toString());
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                stderrData += data.toString();
+                console.error('Python stderr:', data.toString());
+            });
+
+            pythonProcess.on('close', (code) => {
+                console.log('Python process exited with code:', code);
+                
+                if (code === 0) {
+                    resolve(NextResponse.json({
+                        success: true,
+                        message: 'Synthetic data generated successfully',
+                        stdout: stdoutData,
+                        visualizations: {
+                            distributions: '/distributions.png',
+                            correlations: '/correlation_matrix.png',
+                            bic_aic: '/bic_aic_plot.png'
+                        }
+                    }));
+                } else {
+                    resolve(NextResponse.json({
+                        error: 'Failed to generate synthetic data',
+                        details: stderrData || 'Unknown error occurred',
+                        stdout: stdoutData
+                    }, { status: 500 }));
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error in generate route:', error);
+        return NextResponse.json({ 
+            error: 'Internal server error',
+            details: error instanceof Error ? error.message : String(error)
+        }, { status: 500 });
+    }
 } 

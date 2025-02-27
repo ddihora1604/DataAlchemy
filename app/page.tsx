@@ -393,85 +393,47 @@ const calculateSyntheticFileSize = (data: string): string => {
   return formatFileSize(bytes);
 };
 
-const calculateSyntheticMetrics = (syntheticData: string) => {
-  // Parse the synthetic data
-  const parsedData = Papa.parse(syntheticData, { header: true }).data as Record<string, string>[];
-  const columns = Object.keys(parsedData[0] || {});
-  
-  // Initialize metrics
-  const columnMetrics: Record<string, {
-    uniqueValues: number,
-    missingValues: number,
-    completeness: number,
-    range: number | null,
-    min: number | null,
-    max: number | null,
-    mean: number | null
-  }> = {};
-  
-  // Calculate metrics for each column
-  columns.forEach(column => {
-    const values = parsedData.map(row => row[column]);
+interface SyntheticMetrics {
+  mean: number;
+  min: number;
+  max: number;
+  uniqueCount: number;
+}
+
+const calculateSyntheticMetrics = async (syntheticData: Blob): Promise<Record<string, SyntheticMetrics>> => {
+  try {
+    // Convert Blob to text
+    const text = await syntheticData.text();
     
-    // Count missing values
-    const missingValues = values.filter(val => 
-      val === null || 
-      val === undefined || 
-      val === '' || 
-      (typeof val === 'number' && isNaN(val))
-    ).length - 1;
-    
-    // Get non-missing values
-    const nonMissingValues = values.filter(val => 
-      val !== null && 
-      val !== undefined && 
-      val !== '' && 
-      !(typeof val === 'number' && isNaN(val))
-    );
-    
-    // Count unique values
-    const uniqueValues = new Set(nonMissingValues).size;
-    
-    // Calculate completeness
-    const completeness = ((values.length - missingValues) / values.length) * 100;
-    
-    // Calculate range, min, max and mean for numeric columns
-    let range = null;
-    let min = null;
-    let max = null;
-    let mean = null;
-    
-    if (nonMissingValues.length > 0 && nonMissingValues.every(val => !isNaN(Number(val)))) {
-      const numbers = nonMissingValues.map(v => Number(v));
-      min = Math.min(...numbers);
-      max = Math.max(...numbers);
-      range = max - min;
-      mean = numbers.reduce((a, b) => a + b, 0) / numbers.length;
+    // Parse the CSV text
+    const parsedData = Papa.parse(text, { header: true }).data as Record<string, string>[];
+    if (!parsedData.length || !parsedData[0]) {
+      throw new Error('No data found in synthetic dataset');
     }
+
+    const columns = Object.keys(parsedData[0]);
+    const metrics: Record<string, SyntheticMetrics> = {};
     
-    columnMetrics[column] = {
-      uniqueValues,
-      missingValues,
-      completeness,
-      range,
-      min,
-      max,
-      mean
-    };
-  });
-  
-  // Calculate overall metrics
-  const overallMetrics = {
-    uniqueRatio: Object.values(columnMetrics).reduce((acc, col) => 
-      acc + (col.uniqueValues / parsedData.length), 0) / columns.length * 100,
-    overallCompleteness: Object.values(columnMetrics).reduce((acc, col) => 
-      acc + col.completeness, 0) / columns.length
-  };
-  
-  return {
-    columnMetrics,
-    overallMetrics
-  };
+    columns.forEach(column => {
+      const values = parsedData
+        .map(row => row[column] ? parseFloat(row[column]) : NaN)
+        .filter(val => !isNaN(val));
+        
+      if (values.length > 0) {
+        metrics[column] = {
+          mean: values.reduce((a, b) => a + b, 0) / values.length,
+          min: Math.min(...values),
+          max: Math.max(...values),
+          uniqueCount: new Set(values).size
+        };
+      }
+    });
+    
+    return metrics;
+  } catch (error) {
+    console.error('Error calculating synthetic metrics:', error);
+    throw error;
+  }
 };
 
 export default function Home() {
@@ -501,6 +463,7 @@ export default function Home() {
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStage, setGenerationStage] = useState('')
   const [isPopupClosing, setIsPopupClosing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -562,151 +525,123 @@ export default function Home() {
   }
 
   const handleFileProcess = async (file: File) => {
-    setIsUploading(true)
-    setSelectedFile(file)
+    setIsUploading(true);
+    setSelectedFile(file);
     
     try {
-      const processedData = await processCSV(file)
-      setDataset(processedData)
+      // Create FormData to send the file
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Upload the file to our server
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      // Process the CSV data
+      const processedData = await processCSV(file);
+      setDataset(processedData);
       setUploadedFileDetails({
         name: file.name,
         rows: processedData.data.length,
         columns: processedData.columns.length
-      })
+      });
       
-      // Show the popup
-      setIsPopupClosing(false)
-      setUploadSuccessOpen(true)
+      // Show the success popup
+      setIsPopupClosing(false);
+      setUploadSuccessOpen(true);
       
       // Auto-dismiss with animation after 4 seconds
       setTimeout(() => {
-        setIsPopupClosing(true)
-        // Actually close the popup after animation completes
+        setIsPopupClosing(true);
         setTimeout(() => {
-          setUploadSuccessOpen(false)
-          setIsPopupClosing(false)
-        }, 300) // Match animation duration
-      }, 4000)
+          setUploadSuccessOpen(false);
+          setIsPopupClosing(false);
+        }, 300);
+      }, 4000);
 
       addNotification(
         "Dataset Uploaded",
         `Successfully processed ${file.name}`,
         "action"
-      )
+      );
     } catch (error) {
-      console.error("Error processing file:", error)
-      toast.error("Error processing file")
+      console.error("Error processing file:", error);
+      toast.error("Error processing file");
       addNotification(
         "Upload Error",
         "Failed to process the file. Please ensure it's a valid CSV.",
         "alert"
-      )
-      setSelectedFile(null)
+      );
+      setSelectedFile(null);
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const handleGenerate = async () => {
-    if (!dataset) {
-      toast.error("Please upload a dataset first");
-      return;
-    }
-
     try {
       setIsGenerating(true);
-      setGenerationStage('Generating synthetic data...');
-      setGenerationProgress(0);
+      setError(null);
 
-      // Function to animate progress smoothly
-      const animateProgress = () => {
-        const duration = 3000; // Total animation duration in ms
-        const startTime = Date.now();
-        let lastProgress = 0;
-        let animationFrame: number;
+      if (!selectedFile || !dataset) {
+        throw new Error('Please upload a dataset first');
+      }
 
-        const animate = () => {
-          const currentTime = Date.now();
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          
-          // Use easeInOut for smooth acceleration and deceleration
-          const easeProgress = progress < 0.5
-            ? 4 * progress * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-          
-          // Calculate current progress (0-100)
-          const currentProgress = Math.floor(easeProgress * 100); // Now goes up to 100%
+      if (!sampleSize || sampleSize < 1) {
+        throw new Error('Please specify a valid sample size');
+      }
 
-          // Only update if progress has increased
-          if (currentProgress > lastProgress) {
-            lastProgress = currentProgress;
-            setGenerationProgress(currentProgress);
+      // Show initial progress
+      setGenerationStage('Starting generation process...');
+      setGenerationProgress(10);
+
+      const result = await generateSyntheticData(selectedFile, sampleSize);
+      
+      if (result.success && result.data) {
+        setGenerationStage('Calculating metrics...');
+        setGenerationProgress(70);
+
+        const columnMetrics = await calculateSyntheticMetrics(result.data);
+        
+        // Calculate overall metrics
+        const overallUniqueRatio = Object.values(columnMetrics).reduce((acc, metrics) => {
+          return acc + (metrics.uniqueCount ? metrics.uniqueCount / sampleSize : 0);
+        }, 0) / Object.keys(columnMetrics).length * 100;
+
+        setGenerationMetrics({
+          fileSize: calculateSyntheticFileSize(result.data),
+          columnMetrics: columnMetrics,
+          overallMetrics: {
+            uniqueRatio: overallUniqueRatio,
+            overallCompleteness: 100
           }
+        });
+        
+        setGeneratedData(result.data);
+        setGenerationStage('Generation complete!');
+        setGenerationProgress(100);
 
-          if (progress < 1) {
-            animationFrame = requestAnimationFrame(animate);
-          }
-        };
-
-        animationFrame = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animationFrame);
-      };
-
-      // Start the progress animation
-      const stopAnimation = animateProgress();
-
-      // Generate the actual data
-      const syntheticData = await generateSyntheticData(dataset, sampleSize);
-      
-      // Stop the animation and ensure we're at 100%
-      stopAnimation();
-      setGenerationProgress(100);
-
-      // Calculate metrics from synthetic data
-      const metrics = calculateSyntheticMetrics(syntheticData);
-      const fileSize = calculateSyntheticFileSize(syntheticData);
-      
-      // Create new dataset entry
-      const newDataset = {
-        id: Date.now(),
-        name: `synthetic_${selectedFile?.name || 'dataset'}_${Date.now()}.csv`,
-        originalDataset: selectedFile?.name || 'Unknown',
-        uploadTime: new Date().toLocaleString(),
-        generationDuration: '< 1 minute', // Or calculate actual duration
-        sampleCount: sampleSize,
-        timestamp: new Date().toLocaleString(),
-        syntheticData: syntheticData
-      };
-
-      // Update local storage with new dataset
-      const existingDatasets = JSON.parse(localStorage.getItem('generatedDatasets') || '[]');
-      localStorage.setItem('generatedDatasets', JSON.stringify([...existingDatasets, newDataset]));
-
-      setGeneratedData(syntheticData);
-      
-      // Only show completion message after reaching 100%
-      setGenerationStage('Generation complete!');
-      
-      // Update metrics
-      setGenerationMetrics({
-        fileSize,
-        columnMetrics: metrics.columnMetrics,
-        overallMetrics: metrics.overallMetrics
-      });
-      
-      toast.success("Synthetic data generated successfully!");
-      addNotification(
-        "Generation Complete",
-        "Your synthetic dataset has been generated successfully",
-        "action"
-      );
+        toast.success("Synthetic data generated successfully!");
+        addNotification(
+          "Generation Complete",
+          "Your synthetic dataset has been generated successfully",
+          "action"
+        );
+      }
     } catch (error) {
-      console.error('Error generating synthetic data:', error);
-      toast.error("Failed to generate synthetic data");
+      console.error('Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setError(errorMessage);
+      toast.error(errorMessage);
       addNotification(
         "Generation Failed",
-        error instanceof Error ? error.message : "Failed to generate synthetic data",
+        errorMessage,
         "alert"
       );
     } finally {
@@ -1070,67 +1005,77 @@ export default function Home() {
           </Card>
 
           {/* Column-wise Metrics Card - Now Separate */}
-          <Card className="col-span-2 mt-6">
-            <CardHeader>
-              <CardTitle>Column-wise Metrics</CardTitle>
-              <CardDescription>
-                Detailed analysis of each generated column
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {dataset?.columns.map((column) => {
-                  const metrics = generationMetrics.columnMetrics?.[column];
-                  if (!metrics) return null;
+          {generatedData && generationMetrics && (
+            <Card className="col-span-2 mt-6">
+              <CardHeader>
+                <CardTitle>Column-wise Metrics</CardTitle>
+                <CardDescription>
+                  Detailed analysis of each generated column
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {dataset?.columns.map((column) => {
+                    const columnMetrics = generationMetrics.columnMetrics?.[column];
+                    if (!columnMetrics) return null;
 
-                  return (
-                    <div key={column} className="bg-muted/30 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium">{column}</h4>
-                        <div className="text-sm text-muted-foreground">
-                          {metrics.completeness.toFixed(1)}% Complete
+                    return (
+                      <div key={column} className="bg-muted/30 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium">{column}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            {columnMetrics.mean ? `${columnMetrics.mean.toFixed(2)} avg` : 'N/A'}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Unique Values</p>
-                          <p className="text-lg font-medium">{metrics.uniqueValues.toLocaleString()}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Missing Values</p>
-                          <p className="text-lg font-medium">{metrics.missingValues.toLocaleString()}</p>
-                        </div>
-                        {metrics.min !== null && metrics.max !== null && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Unique Values</p>
+                            <p className="text-lg font-medium">{columnMetrics.uniqueCount?.toLocaleString() ?? 'N/A'}</p>
+                          </div>
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Range</p>
                             <p className="text-lg font-medium">
-                              {metrics.min.toFixed(2)} - {metrics.max.toFixed(2)}
+                              {columnMetrics.min !== undefined && columnMetrics.max !== undefined
+                                ? `${columnMetrics.min.toFixed(2)} - ${columnMetrics.max.toFixed(2)}`
+                                : 'N/A'}
                             </p>
                           </div>
-                        )}
-                        {metrics.mean !== null && (
                           <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Mean</p>
-                            <p className="text-lg font-medium">{metrics.mean.toFixed(2)}</p>
+                            <p className="text-lg font-medium">
+                              {columnMetrics.mean !== undefined ? columnMetrics.mean.toFixed(2) : 'N/A'}
+                            </p>
                           </div>
-                        )}
-                      </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Unique Ratio</p>
+                            <p className="text-lg font-medium">
+                              {columnMetrics.uniqueCount && dataset
+                                ? `${((columnMetrics.uniqueCount / dataset.data.length) * 100).toFixed(1)}%`
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
 
-                      <div className="mt-3">
-                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full transition-all duration-500"
-                            style={{ width: `${metrics.completeness}%` }}
-                          />
+                        <div className="mt-3">
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${columnMetrics.uniqueCount && dataset
+                                  ? (columnMetrics.uniqueCount / dataset.data.length) * 100
+                                  : 0}%` 
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 

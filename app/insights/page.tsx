@@ -1,5 +1,7 @@
 "use client"
 
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
@@ -27,6 +29,30 @@ const demoData = {
 
 export default function Insights() {
   const { dataset, generatedData } = useData()
+  const [visualizations, setVisualizations] = useState({
+    distributions: '',
+    correlations: '',
+    bic_aic: ''
+  });
+
+  useEffect(() => {
+    // Check if visualizations exist and update state
+    const checkVisualizations = async () => {
+      try {
+        const response = await fetch('/api/visualizations');
+        const data = await response.json();
+        if (data.success) {
+          setVisualizations(data.visualizations);
+        }
+      } catch (error) {
+        console.error('Error fetching visualizations:', error);
+      }
+    };
+
+    if (dataset && generatedData) {
+      checkVisualizations();
+    }
+  }, [dataset, generatedData]);
 
   if (!dataset || !generatedData) {
     return (
@@ -44,10 +70,69 @@ export default function Insights() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Data Insights</h2>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Data Insights</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Feature Distributions */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Feature Distributions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {visualizations.distributions && (
+              <div className="relative w-full h-[600px]">
+                <Image
+                  src={visualizations.distributions}
+                  alt="Feature Distributions"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  priority
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Correlation Matrix */}
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Correlation Matrix</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {visualizations.correlations && (
+              <div className="relative w-full h-[400px]">
+                <Image
+                  src={visualizations.correlations}
+                  alt="Correlation Matrix"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* BIC/AIC Plot
+        <Card>
+          <CardHeader>
+            <CardTitle>Model Selection (BIC/AIC)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {visualizations.bic_aic && (
+              <div className="relative w-full h-[400px]">
+                <Image
+                  src={visualizations.bic_aic}
+                  alt="BIC/AIC Plot"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card> */}
       </div>
+
       <Tabs defaultValue="distributions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="distributions">Distributions</TabsTrigger>
