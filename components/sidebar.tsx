@@ -36,7 +36,7 @@ export default function Sidebar() {
             isCollapsed ? "opacity-0 w-0" : "opacity-100 w-auto",
             "transition-all duration-300 ease-in-out"
           )}>
-            Data Alchemy
+            DataAlchemy
           </h1>
         </div>
         <Button 

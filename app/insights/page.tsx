@@ -57,11 +57,13 @@ export default function Insights() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <h2 className="text-3xl font-bold tracking-tight">Data Insights</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
+  Exploratory Data Analysis: Uncover the Patterns and Insights of your Generated Synthetic Numerical Dataset !
+</h2>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">
-              Generate synthetic data first to view insights
+              Please generate synthetic numericaldata in the 'Dashboard' first to view insights
             </p>
           </CardContent>
         </Card>

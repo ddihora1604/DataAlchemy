@@ -4,8 +4,8 @@ import { Providers } from '@/components/providers';
 import { DataProvider } from "@/contexts/data-context"
 
 export const metadata: Metadata = {
-  title: 'Data Alchemy - AI-Powered Synthetic Data Generation',
-  description: 'Advanced synthetic data generation using VAEs, GANs, and Copula-based synthesis',
+  title: 'DataAlchemy - Synthetic Numerical Data Generator',
+  description: 'Advanced synthetic numerical data generation using Gaussian Mixture Model, incorporating robust statistical tests, measures, and comprehensive numerical analysis and actionable data insights.',
   viewport: 'width=device-width, initial-scale=1',
 };
 

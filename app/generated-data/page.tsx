@@ -84,12 +84,14 @@ export default function GeneratedData() {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Generated Datasets</h2>
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
+      Revisit your Generated Synthetic Numerical Datasets and Explore the History of their Generation!
+</h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Synthetic Datasets</CardTitle>
+          <CardTitle>Synthetic Numerical Datasets Generated</CardTitle>
         </CardHeader>
         <CardContent>
           {datasets.length > 0 ? (
@@ -147,7 +149,7 @@ export default function GeneratedData() {
                 No Datasets Generated Yet
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Upload a dataset and generate synthetic data to see it here.
+                Upload a dataset and generate synthetic numerical data to see it here.
               </p>
             </div>
           )}

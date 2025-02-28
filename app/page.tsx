@@ -680,10 +680,10 @@ export default function Home() {
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Upload your dataset and generate synthetic data with advanced AI models
-          </p>
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
+  Double your Data, Increase your Insights: Let our AI clone your Data into a Digital Twin!
+</h2>
+          
         </div>
       </div>
       
@@ -732,7 +732,7 @@ export default function Home() {
                       ? 'Analyzing and preparing your dataset' 
                       : selectedFile 
                       ? 'Click Generate to create synthetic data' 
-                      : 'Drag and drop your CSV file here, or click to browse'
+                      : 'Drag-drop your CSV file here, or click to browse'
                     }
                   </p>
                 </div>
@@ -791,10 +791,10 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wand2 className="h-5 w-5 text-primary" />
-              Generate Synthetic Data
+              Generate Synthetic Numerical Data
             </CardTitle>
             <CardDescription>
-              Configure and generate high-quality synthetic data
+              Configure and generate high-quality synthetic numerical data
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -808,7 +808,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="font-medium">Generation Settings</h3>
-                      <p className="text-sm text-muted-foreground">Configure your synthetic data output</p>
+                      <p className="text-sm text-muted-foreground">Configure your Synthetic Data Output</p>
                     </div>
                   </div>
 
@@ -967,7 +967,7 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center h-[300px] text-center space-y-2">
                 <Wand2 className="h-12 w-12 text-muted-foreground/50" />
                 <p className="text-sm text-muted-foreground">
-                  Upload a dataset to start generating synthetic data
+                  Upload a dataset to start generating synthetic numerical data
                 </p>
               </div>
             )}
