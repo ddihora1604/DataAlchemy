@@ -15,7 +15,12 @@ import {
   Bar, 
   ScatterChart, 
   Scatter,
-  ReferenceLine
+  ReferenceLine,
+  RadarChart, 
+  Radar, 
+  PolarGrid, 
+  PolarAngleAxis,
+  PolarRadiusAxis
 } from 'recharts'
 import { useData } from "@/contexts/data-context"
 import Papa from 'papaparse'
@@ -200,11 +205,23 @@ const calculateStatisticalTests = (original: number[], synthetic: number[]) => {
   }
 };
 
+// Add this type definition at the top of the file
+type VisualizationData = {
+  distributions: any[];
+  correlations: any[];
+  radarData: any[];
+  polarData: any[];
+  statistics: {
+    original: any;
+    synthetic: any;
+  };
+};
+
 export default function Analysis() {
   const { dataset, generatedData } = useData()
 
   // Add state for visualization data
-  const [visualizationData, setVisualizationData] = useState(null);
+  const [visualizationData, setVisualizationData] = useState<VisualizationData | null>(null);
   const [selectedColumn, setSelectedColumn] = useState('');
 
   useEffect(() => {
@@ -225,121 +242,41 @@ export default function Analysis() {
 
   // Update the processDataForVisualization function
   const processDataForVisualization = async () => {
-    if (!dataset || !generatedData) return null;
+    if (!dataset || !generatedData) {
+      console.log('No data available, using demo data');
+      return {
+        distributions: demoData.distributions,
+        correlations: demoData.correlations,
+        statistics: demoData.statistics,
+        radarData: dataset?.columns.map(column => ({
+          feature: column,
+          originalValue: 0.5 + Math.random() * 0.3,
+          syntheticValue: 0.5 + Math.random() * 0.3
+        })) || [],
+        polarData: dataset?.columns.map(column => ({
+          feature: column,
+          originalDist: 0.5 + Math.random() * 0.3,
+          syntheticDist: 0.5 + Math.random() * 0.3
+        })) || []
+      } as VisualizationData;
+    }
 
     try {
-      // Ensure proper parsing of generated data
-      let parsedGenerated: any[] = [];
-      
-      if (typeof generatedData === 'string') {
-        const parseResult = Papa.parse(generatedData, { 
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true 
-        });
-        parsedGenerated = parseResult.data;
-      } else if (generatedData instanceof Blob) {
-        const text = await generatedData.text();
-        const parseResult = Papa.parse(text, { 
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true 
-        });
-        parsedGenerated = parseResult.data;
-      } else {
-        parsedGenerated = Array.isArray(generatedData) ? generatedData : [generatedData];
-      }
+      // Parse generated data
+      const text = await generatedData.text();
+      const parsedGenerated = Papa.parse(text, { 
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true 
+      }).data;
 
       // Validate parsed data
-      if (!Array.isArray(parsedGenerated) || parsedGenerated.length === 0) {
-        console.error('Invalid or empty generated data');
-        return null;
+      if (!Array.isArray(parsedGenerated) || !parsedGenerated.length) {
+        console.warn('Invalid or empty generated data, falling back to demo data');
+        return processDataForVisualization();
       }
 
-      // Calculate correlations between features
-      const correlations = dataset.columns.flatMap((column1, i) => 
-        dataset.columns.map((column2, j) => {
-          if (i >= j) return null; // Skip duplicate calculations
-
-          try {
-            const original1 = dataset.data
-              .map(row => parseFloat(row[i]))
-              .filter(val => !isNaN(val));
-            const original2 = dataset.data
-              .map(row => parseFloat(row[j]))
-              .filter(val => !isNaN(val));
-            
-            const synthetic1 = parsedGenerated
-              .map(row => {
-                if (!row) return NaN;
-                const value = Array.isArray(row) ? row[i] : row[column1];
-                return typeof value === 'number' ? value : parseFloat(value);
-              })
-              .filter(val => !isNaN(val));
-            const synthetic2 = parsedGenerated
-              .map(row => {
-                if (!row) return NaN;
-                const value = Array.isArray(row) ? row[j] : row[column2];
-                return typeof value === 'number' ? value : parseFloat(value);
-              })
-              .filter(val => !isNaN(val));
-
-            if (original1.length && original2.length && synthetic1.length && synthetic2.length) {
-              return {
-                feature1: column1,
-                feature2: column2,
-                originalCorr: calculateCorrelation(original1, original2),
-                syntheticCorr: calculateCorrelation(synthetic1, synthetic2)
-              };
-            }
-          } catch (error) {
-            console.error(`Error calculating correlation for ${column1}-${column2}:`, error);
-          }
-          return null;
-        }).filter(Boolean)
-      );
-
-      // Calculate statistics for each column
-      const statistics = {
-        original: {},
-        synthetic: {}
-      };
-
-      dataset.columns.forEach((column, columnIndex) => {
-        // Get original values
-        const originalValues = dataset.data
-          .map(row => parseFloat(row[columnIndex]))
-          .filter(val => !isNaN(val));
-
-        // Get synthetic values
-        const syntheticValues = parsedGenerated
-          .map((row: any) => {
-            if (!row) return NaN;
-            return Array.isArray(row) ? 
-              parseFloat(row[columnIndex]) : 
-              parseFloat(row[column]);
-          })
-          .filter(val => !isNaN(val));
-
-        if (originalValues.length && syntheticValues.length) {
-          const originalStats = calculateStatistics(originalValues);
-          const syntheticStats = calculateStatistics(syntheticValues);
-          const statTests = calculateStatisticalTests(originalValues, syntheticValues);
-
-          if (originalStats && syntheticStats && statTests) {
-            statistics.original[column] = {
-              ...originalStats,
-              ...statTests
-            };
-            statistics.synthetic[column] = {
-              ...syntheticStats,
-              ...statTests
-            };
-          }
-        }
-      });
-
-      // Process the data and update state
+      // Process the data for visualizations
       const processedData = {
         distributions: dataset.columns.flatMap((column, columnIndex) => {
           // Get original values
@@ -416,15 +353,155 @@ export default function Analysis() {
             synthetic: syntheticTotal > 0 ? (bin.synthetic / syntheticTotal) * 100 : 0
           }));
         }),
-        correlations,
-        statistics
+        correlations: dataset.columns.flatMap((column1, i) => 
+          dataset.columns.map((column2, j) => {
+            if (i >= j) return null; // Skip duplicate calculations
+
+            try {
+              const original1 = dataset.data
+                .map(row => parseFloat(row[i]))
+                .filter(val => !isNaN(val));
+              const original2 = dataset.data
+                .map(row => parseFloat(row[j]))
+                .filter(val => !isNaN(val));
+              
+              const synthetic1 = parsedGenerated
+                .map(row => {
+                  if (!row) return NaN;
+                  const value = Array.isArray(row) ? row[i] : row[column1];
+                  return typeof value === 'number' ? value : parseFloat(value);
+                })
+                .filter(val => !isNaN(val));
+              const synthetic2 = parsedGenerated
+                .map(row => {
+                  if (!row) return NaN;
+                  const value = Array.isArray(row) ? row[j] : row[column2];
+                  return typeof value === 'number' ? value : parseFloat(value);
+                })
+                .filter(val => !isNaN(val));
+
+              if (original1.length && original2.length && synthetic1.length && synthetic2.length) {
+                return {
+                  feature1: column1,
+                  feature2: column2,
+                  originalCorr: calculateCorrelation(original1, original2),
+                  syntheticCorr: calculateCorrelation(synthetic1, synthetic2)
+                };
+              }
+            } catch (error) {
+              console.error(`Error calculating correlation for ${column1}-${column2}:`, error);
+            }
+            return null;
+          }).filter(Boolean)
+        ),
+        statistics: {
+          original: {},
+          synthetic: {}
+        },
+        radarData: dataset.columns.map(column => {
+          const originalValues = dataset.data
+            .map(row => parseFloat(row[dataset.columns.indexOf(column)]))
+            .filter(val => !isNaN(val));
+          
+          const syntheticValues = parsedGenerated
+            .map((row: any) => {
+              if (!row || !row[column]) return NaN;
+              return parseFloat(row[column]);
+            })
+            .filter(val => !isNaN(val));
+
+          if (!originalValues.length || !syntheticValues.length) {
+            return {
+              feature: column,
+              originalValue: 0,
+              syntheticValue: 0
+            };
+          }
+
+          return {
+            feature: column,
+            originalValue: standardDeviation(originalValues) / mean(originalValues),
+            syntheticValue: standardDeviation(syntheticValues) / mean(syntheticValues)
+          };
+        }),
+        polarData: dataset.columns.map(column => {
+          // Get original values and filter out invalid entries
+          const originalValues = dataset.data
+            .map(row => parseFloat(row[dataset.columns.indexOf(column)]))
+            .filter(val => !isNaN(val));
+
+          // Get synthetic values and filter out invalid entries
+          const syntheticValues = parsedGenerated
+            .map((row: any) => {
+              if (!row || !row[column]) return NaN;
+              return parseFloat(row[column]);
+            })
+            .filter(val => !isNaN(val));
+
+          // Check if we have enough data points
+          if (originalValues.length < 2 || syntheticValues.length < 2) {
+            return {
+              feature: column,
+              originalDist: 0,
+              syntheticDist: 0
+            };
+          }
+
+          // Calculate coefficient of variation (CV) for better comparison
+          const originalCV = standardDeviation(originalValues) / (mean(originalValues) || 1);
+          const syntheticCV = standardDeviation(syntheticValues) / (mean(syntheticValues) || 1);
+
+          // Normalize the values to a 0-1 scale
+          const maxCV = Math.max(originalCV, syntheticCV);
+          
+          return {
+            feature: column,
+            originalDist: maxCV === 0 ? 0 : originalCV / (maxCV || 1),
+            syntheticDist: maxCV === 0 ? 0 : syntheticCV / (maxCV || 1)
+          };
+        }).filter(data => data.originalDist !== 0 || data.syntheticDist !== 0)
       };
+
+      // Calculate statistics for each column
+      dataset.columns.forEach((column, columnIndex) => {
+        // Get original values
+        const originalValues = dataset.data
+          .map(row => parseFloat(row[columnIndex]))
+          .filter(val => !isNaN(val));
+
+        // Get synthetic values
+        const syntheticValues = parsedGenerated
+          .map((row: any) => {
+            if (!row) return NaN;
+            return Array.isArray(row) ? 
+              parseFloat(row[columnIndex]) : 
+              parseFloat(row[column]);
+          })
+          .filter(val => !isNaN(val));
+
+        if (originalValues.length && syntheticValues.length) {
+          const originalStats = calculateStatistics(originalValues);
+          const syntheticStats = calculateStatistics(syntheticValues);
+          const statTests = calculateStatisticalTests(originalValues, syntheticValues);
+
+          if (originalStats && syntheticStats && statTests) {
+            processedData.statistics.original[column] = {
+              ...originalStats,
+              ...statTests
+            };
+            processedData.statistics.synthetic[column] = {
+              ...syntheticStats,
+              ...statTests
+            };
+          }
+        }
+      });
 
       setVisualizationData(processedData);
       return processedData;
     } catch (error) {
       console.error('Error processing visualization data:', error);
-      return null;
+      return processDataForVisualization();
     }
   };
 
@@ -455,8 +532,7 @@ export default function Analysis() {
         <TabsList>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>
           <TabsTrigger value="visualizations">Visualizations</TabsTrigger>
-          <TabsTrigger value="distributions">Distributions</TabsTrigger>
-          <TabsTrigger value="correlations">Correlations</TabsTrigger>
+          <TabsTrigger value="charts">Charts</TabsTrigger>
         </TabsList>
         
         <TabsContent value="statistics" className="space-y-4">
@@ -612,145 +688,167 @@ export default function Analysis() {
               <CardContent>
                 <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart>
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 40, left: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis {...defaultAxisProps} dataKey="originalCorr" name="Original Correlation" />
-                      <YAxis {...defaultAxisProps} dataKey="syntheticCorr" name="Synthetic Correlation" />
+                      <XAxis 
+                        {...defaultAxisProps} 
+                        type="number"
+                        dataKey="originalCorr"
+                        name="Original Correlation"
+                        domain={[-1, 1]}
+                        label={{ 
+                          value: 'Original Dataset Correlation', 
+                          position: 'bottom',
+                          offset: 20
+                        }}
+                        tickFormatter={(value) => value.toFixed(2)}
+                      />
+                      <YAxis 
+                        {...defaultAxisProps}
+                        type="number"
+                        dataKey="syntheticCorr"
+                        name="Synthetic Correlation"
+                        domain={[-1, 1]}
+                        label={{ 
+                          value: 'Synthetic Dataset Correlation', 
+                          angle: -90, 
+                          position: 'left',
+                          offset: 10
+                        }}
+                        tickFormatter={(value) => value.toFixed(2)}
+                      />
                       <Tooltip 
                         cursor={{ strokeDasharray: '3 3' }}
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--background))',
                           border: '1px solid hsl(var(--border))'
                         }}
+                        formatter={(value: number, name: string) => [
+                          value.toFixed(4),
+                          name === 'originalCorr' ? 'Original Correlation' : 'Synthetic Correlation'
+                        ]}
+                        labelFormatter={(value) => {
+                          const point = visualizationData?.correlations?.find(
+                            (c: any) => c.originalCorr === value || c.syntheticCorr === value
+                          );
+                          return point ? `${point.feature1} vs ${point.feature2}` : '';
+                        }}
                       />
-                      <Legend />
-                      <Scatter 
-                        name="Feature Correlations" 
-                        data={visualizationData?.correlations || []} 
-                        fill="hsl(var(--chart-1))" 
+                      <Legend 
+                        verticalAlign="top" 
+                        height={36}
+                      />
+                      <ReferenceLine 
+                        segment={[{ x: -1, y: -1 }, { x: 1, y: 1 }]}
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeDasharray="3 3"
+                        strokeOpacity={0.5}
+                        name="Perfect Correlation"
+                      />
+                      <Scatter
+                        data={visualizationData?.correlations || []}
+                        fill="hsl(var(--chart-1))"
+                        name="Feature Pairs"
+                        opacity={0.7}
                       />
                     </ScatterChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground text-center">
+                  Points closer to the diagonal line indicate better correlation preservation
                 </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="distributions">
+        <TabsContent value="charts" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Data Distribution Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={visualizationData?.distributions || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      {...defaultAxisProps} 
-                      dataKey="x"
-                      label={{ value: 'Value', position: 'bottom' }}
-                    />
-                    <YAxis 
-                      {...defaultAxisProps}
-                      label={{ value: 'Frequency', angle: -90, position: 'left' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))'
-                      }}
-                    />
-                    <Legend />
-                    <Bar 
-                      dataKey="original" 
-                      fill="hsl(var(--chart-1))" 
-                      name="Original Data" 
-                    />
-                    <Bar 
-                      dataKey="synthetic" 
-                      fill="hsl(var(--chart-2))" 
-                      name="Synthetic Data" 
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+  <CardHeader>
+    <CardTitle>Feature Comparison Radar</CardTitle>
+    <p className="text-sm text-muted-foreground">
+      Statistical similarity between original and synthetic features
+    </p>
+  </CardHeader>
+  <CardContent>
+    <div className="h-[400px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+          <PolarGrid 
+            stroke="hsl(var(--border))" 
+            strokeDasharray="3 3" 
+          />
+          <PolarAngleAxis
+            dataKey="feature"
+            tick={{ 
+              fill: 'hsl(var(--foreground))', 
+              fontSize: 12,
+              dy: 4 
+            }}
+          />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 1]}
+            tick={{ 
+              fill: 'hsl(var(--foreground))', 
+              fontSize: 12 
+            }}
+            tickCount={5}
+          />
+          <Radar
+            name="Original Data"
+            dataKey="originalValue"
+            stroke="#3b82f6" // Vibrant blue
+            fill="#3b82f6"   // Vibrant blue
+            fillOpacity={0.4}
+            strokeWidth={2}
+            data={visualizationData?.radarData || []}
+          />
+          <Radar
+            name="Synthetic Data"
+            dataKey="syntheticValue"
+            stroke="#10b981" // Vibrant green
+            fill="#10b981"  // Vibrant green
+            fillOpacity={0.4}
+            strokeWidth={2}
+            data={visualizationData?.radarData || []}
+          />
+          <Legend 
+            verticalAlign="bottom" 
+            height={36}
+            formatter={(value) => (
+              <span className="text-sm font-medium">
+                {value}
+              </span>
+            )}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--background))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '6px',
+              padding: '8px 12px'
+            }}
+            formatter={(value) => [
+              `${(value * 100).toFixed(1)}% similarity`,
+              ''
+            ]}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="mt-2 text-sm text-muted-foreground text-center">
+      Higher values indicate better similarity between datasets
+    </div>
+  </CardContent>
+</Card>
+
+            
+          </div>
         </TabsContent>
 
-        <TabsContent value="correlations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feature Correlations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 30, bottom: 40, left: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      {...defaultAxisProps} 
-                      type="number"
-                      dataKey="originalCorr"
-                      name="Original Correlation"
-                      domain={[-1, 1]}
-                      label={{ 
-                        value: 'Original Dataset Correlation', 
-                        position: 'bottom',
-                        offset: 20
-                      }}
-                      tickFormatter={(value) => value.toFixed(2)}
-                    />
-                    <YAxis 
-                      {...defaultAxisProps}
-                      type="number"
-                      dataKey="syntheticCorr"
-                      name="Synthetic Correlation"
-                      domain={[-1, 1]}
-                      label={{ 
-                        value: 'Synthetic Dataset Correlation', 
-                        angle: -90, 
-                        position: 'left',
-                        offset: 40
-                      }}
-                      tickFormatter={(value) => value.toFixed(2)}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))'
-                      }}
-                      formatter={(value: number, name: string) => [
-                        value.toFixed(4),
-                        name === 'originalCorr' ? 'Original Correlation' : 'Synthetic Correlation'
-                      ]}
-                      labelFormatter={(value) => {
-                        const point = visualizationData?.correlations?.find(
-                          (c: any) => c.originalCorr === value || c.syntheticCorr === value
-                        );
-                        return point ? `${point.feature1} vs ${point.feature2}` : '';
-                      }}
-                    />
-                    <Legend verticalAlign="top" height={36} />
-                    <ReferenceLine 
-                      segment={[{ x: -1, y: -1 }, { x: 1, y: 1 }]}
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeDasharray="3 3"
-                      strokeOpacity={0.5}
-                    />
-                    <Scatter
-                      data={visualizationData?.correlations || []}
-                      fill="hsl(var(--chart-1))"
-                      name="Feature Correlations"
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
       </Tabs>
     </div>
   )

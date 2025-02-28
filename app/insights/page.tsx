@@ -133,7 +133,7 @@ export default function Insights() {
         </Card> */}
       </div>
 
-      <Tabs defaultValue="distributions" className="space-y-4">
+      {/* <Tabs defaultValue="distributions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="distributions">Distributions</TabsTrigger>
           <TabsTrigger value="categorical">Categorical Analysis</TabsTrigger>
@@ -251,7 +251,7 @@ export default function Insights() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+      </Tabs> */}
     </div>
   )
 }
