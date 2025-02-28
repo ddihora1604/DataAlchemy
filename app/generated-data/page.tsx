@@ -76,9 +76,24 @@ export default function GeneratedData() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [selectedGeneration, setSelectedGeneration] = useState<any>(null)
 
-  const handleViewDetails = (item: any) => {
-    setSelectedGeneration(item)
-    setIsDetailsOpen(true)
+  const handleViewDetails = (dataset: GeneratedDataset) => {
+    const details = {
+      id: dataset.id,
+      timestamp: dataset.timestamp,
+      model: "Gaussian Mixture Model",
+      parameters: `Samples: ${dataset.sampleCount}`,
+      status: "Completed",
+      duration: dataset.generationDuration,
+      datasetInfo: {
+        rowCount: dataset.sampleCount,
+        columnCount: 0, // You can calculate this from the data if needed
+        dataTypes: {},
+        sampleRows: []
+      }
+    };
+    
+    setSelectedGeneration(details);
+    setIsDetailsOpen(true);
   }
 
   return (
@@ -120,7 +135,16 @@ export default function GeneratedData() {
                       Original dataset: {dataset.originalDataset || 'Unknown'}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(dataset)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Details
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

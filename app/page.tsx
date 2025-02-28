@@ -726,7 +726,7 @@ export default function Home() {
       <div className="flex items-center justify-between space-y-2">
         <div>
         <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
-  Double your Data, Increase your Insights: Let our AI clone your Data into a Digital Twin!
+  Synthetic Numerical Data Generator
 </h2>
           
         </div>

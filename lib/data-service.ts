@@ -196,6 +196,24 @@ export const generateSyntheticData = async (file: File, numSamples: number): Pro
 
     const syntheticDataBlob = await syntheticDataResponse.blob();
     
+    // Add generation to history
+    const timestamp = new Date().toISOString();
+    const generatedDataset = {
+      id: Date.now(),
+      name: `synthetic_${file.name}`,
+      originalDataset: file.name,
+      uploadTime: timestamp,
+      generationDuration: '1-2 minutes', // You can calculate actual duration if needed
+      sampleCount: numSamples,
+      timestamp: new Date().toLocaleString(),
+      syntheticData: await syntheticDataBlob.text()
+    };
+
+    // Get existing datasets from localStorage
+    const existingDatasets = JSON.parse(localStorage.getItem('generatedDatasets') || '[]');
+    existingDatasets.push(generatedDataset);
+    localStorage.setItem('generatedDatasets', JSON.stringify(existingDatasets));
+    
     console.log('Successfully generated synthetic data');
     return {
       success: true,
