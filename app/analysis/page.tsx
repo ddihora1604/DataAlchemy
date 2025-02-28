@@ -562,6 +562,12 @@ export default function Analysis() {
                           <div>Q1: {stats.q1?.toFixed(4)}</div>
                           <div>Q3: {stats.q3?.toFixed(4)}</div>
                           <div>Sample Size: {stats.sampleSize}</div>
+                          
+                        </div>
+                        <div className="mt-2 pt-2 border-t grid grid-cols-2 gap-2 text-sm">
+                          {/* <div>KS Test: {stats.ksTest?.toFixed(4)}</div>
+                          <div>Similarity: {stats.statSimilarity?.toFixed(4)}</div>
+                          <div>Correlation: {stats.correlationScore?.toFixed(4)}</div> */}
                         </div>
                       </div>
                     ) : null;
@@ -592,8 +598,8 @@ export default function Analysis() {
                           <div>Sample Size: {stats.sampleSize}</div>
                         </div>
                         <div className="mt-2 pt-2 border-t grid grid-cols-2 gap-2 text-sm">
-                          {/* <div>KS Test: {stats.ksTest?.toFixed(4)}</div> */}
-                          {/* <div>Similarity: {stats.statSimilarity?.toFixed(4)}</div>
+                          {/* <div>KS Test: {stats.ksTest?.toFixed(4)}</div>
+                          <div>Similarity: {stats.statSimilarity?.toFixed(4)}</div>
                           <div>Correlation: {stats.correlationScore?.toFixed(4)}</div> */}
                         </div>
                       </div>
@@ -686,83 +692,101 @@ export default function Analysis() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Feature Correlation Scatter</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 30, bottom: 40, left: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        {...defaultAxisProps} 
-                        type="number"
-                        dataKey="originalCorr"
-                        name="Original Correlation"
-                        domain={[-1, 1]}
-                        label={{ 
-                          value: 'Original Dataset Correlation', 
-                          position: 'bottom',
-                          offset: 20
-                        }}
-                        tickFormatter={(value) => value.toFixed(2)}
-                      />
-                      <YAxis 
-                        {...defaultAxisProps}
-                        type="number"
-                        dataKey="syntheticCorr"
-                        name="Synthetic Correlation"
-                        domain={[-1, 1]}
-                        label={{ 
-                          value: 'Synthetic Dataset Correlation', 
-                          angle: -90, 
-                          position: 'left',
-                          offset: 10
-                        }}
-                        tickFormatter={(value) => value.toFixed(2)}
-                      />
-                      <Tooltip 
-                        cursor={{ strokeDasharray: '3 3' }}
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))'
-                        }}
-                        formatter={(value: number, name: string) => [
-                          value.toFixed(4),
-                          name === 'originalCorr' ? 'Original Correlation' : 'Synthetic Correlation'
-                        ]}
-                        labelFormatter={(value) => {
-                          const point = visualizationData?.correlations?.find(
-                            (c: any) => c.originalCorr === value || c.syntheticCorr === value
-                          );
-                          return point ? `${point.feature1} vs ${point.feature2}` : '';
-                        }}
-                      />
-                      <Legend 
-                        verticalAlign="top" 
-                        height={36}
-                      />
-                      <ReferenceLine 
-                        segment={[{ x: -1, y: -1 }, { x: 1, y: 1 }]}
-                        stroke="hsl(var(--muted-foreground))"
-                        strokeDasharray="3 3"
-                        strokeOpacity={0.5}
-                        name="Perfect Correlation"
-                      />
-                      <Scatter
-                        data={visualizationData?.correlations || []}
-                        fill="hsl(var(--chart-1))"
-                        name="Feature Pairs"
-                        opacity={0.7}
-                      />
-                    </ScatterChart>
-                  </ResponsiveContainer>
+  <CardHeader>
+    <CardTitle>Feature Correlation Scatter</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ScatterChart margin={{ top: 20, right: 30, bottom: 40, left: 60 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <XAxis 
+            {...defaultAxisProps} 
+            type="number"
+            dataKey="originalCorr"
+            name="Original Correlation"
+            domain={[-1, 1]}
+            label={{ 
+              value: 'Original Correlation', 
+              position: 'bottom',
+              offset: 20
+            }}
+            tickFormatter={(value) => value.toFixed(2)}
+          />
+          <YAxis 
+            {...defaultAxisProps}
+            type="number"
+            dataKey="syntheticCorr"
+            name="Synthetic Correlation"
+            domain={[-1, 1]}
+            label={{ 
+              value: 'Synthetic Correlation', 
+              angle: -90, 
+              position: 'left',
+              offset: 10
+            }}
+            tickFormatter={(value) => value.toFixed(2)}
+          />
+          <Tooltip 
+            cursor={{ strokeDasharray: '3 3' }}
+            contentStyle={{ 
+              backgroundColor: 'hsl(var(--background))',
+              border: '1px solid hsl(var(--border))'
+            }}
+            formatter={(value: number, name: string, props: any) => {
+              // Extract original and synthetic correlations
+              const originalCorr = props.payload.originalCorr?.toFixed(4);
+              const syntheticCorr = props.payload.syntheticCorr?.toFixed(4);
+              return [
+                <div key="original">
+                  <strong>Original Correlation:</strong> {originalCorr}
+                </div>,
+                <div key="synthetic">
+                  <strong>Synthetic Correlation:</strong> {syntheticCorr}
                 </div>
-                <div className="mt-2 text-sm text-muted-foreground text-center">
-                  Points closer to the diagonal line indicate better correlation preservation
-                </div>
-              </CardContent>
-            </Card>
+              ];
+            }}
+            labelFormatter={(value) => {
+              const point = visualizationData?.correlations?.find(
+                (c: any) => c.originalCorr === value || c.syntheticCorr === value
+              );
+              return point ? `${point.feature1} vs ${point.feature2}` : '';
+            }}
+          />
+          <Legend 
+            verticalAlign="top" 
+            height={36}
+          />
+          <ReferenceLine 
+            segment={[{ x: -1, y: -1 }, { x: 1, y: 1 }]}
+            stroke="hsl(var(--muted-foreground))"
+            strokeDasharray="3 3"
+            strokeOpacity={0.5}
+            name="Perfect Correlation"
+          />
+          {/* Scatter plot for original dataset */}
+          <Scatter
+            data={visualizationData?.correlations || []}
+            fill="hsl(var(--chart-1))"
+            name="Original Dataset"
+            opacity={0.7}
+          />
+          {/* Scatter plot for synthetic dataset */}
+          <Scatter
+            data={visualizationData?.syntheticCorrelations || []}
+            fill="hsl(var(--chart-2))"
+            name="Synthetic Dataset"
+            opacity={0.7}
+          />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="mt-2 text-sm text-muted-foreground text-center">
+      Points closer to the diagonal line indicate better correlation preservation. 
+      Original dataset is shown in blue, synthetic dataset is shown in orange.
+    </div>
+  </CardContent>
+</Card>
           </div>
         </TabsContent>
 
