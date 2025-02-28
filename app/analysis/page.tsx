@@ -510,8 +510,8 @@ export default function Analysis() {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
-  Compare Statistics and Visualize your Originally Uploaded Dataset with the Synthetically Generated Dataset!
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+  Statistical Analysis and Visualizations
 </h2>
         </div>
         <Card>
@@ -528,12 +528,14 @@ export default function Analysis() {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Numerical Analysis</h2>
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+  Statistical Analysis and Visualizations
+</h2>
       </div>
       <Tabs defaultValue="statistics" className="space-y-4">
         <TabsList>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>
-          <TabsTrigger value="visualizations">Visualizations</TabsTrigger>
+          <TabsTrigger value="visualizations 1">Visualization</TabsTrigger>
           <TabsTrigger value="charts">Charts</TabsTrigger>
         </TabsList>
         
@@ -603,7 +605,7 @@ export default function Analysis() {
           </div>
         </TabsContent>
 
-        <TabsContent value="visualizations" className="space-y-4">
+        <TabsContent value="visualizations 1" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -764,9 +766,11 @@ export default function Analysis() {
           </div>
         </TabsContent>
 
+       
+
         <TabsContent value="charts" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="col-span-2 mt-6">
   <CardHeader>
     <CardTitle>Feature Comparison Radar</CardTitle>
     <p className="text-sm text-muted-foreground">
@@ -774,7 +778,7 @@ export default function Analysis() {
     </p>
   </CardHeader>
   <CardContent>
-    <div className="h-[400px]">
+    <div className="h-[600px]">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
           <PolarGrid 

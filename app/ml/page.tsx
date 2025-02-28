@@ -63,8 +63,8 @@ export default function MachineLearning() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
-  Train a Machine Learning Model on your Generated Synthetic Numerical Dataset to view the Utility and Model Performance on the Data!
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+   Machine Learning Utility
 </h2>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -80,7 +80,9 @@ export default function MachineLearning() {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Machine Learning</h2>
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+      Machine Learning Utility
+</h2>
       </div>
       <Tabs defaultValue="training" className="space-y-4">
         <TabsList>

@@ -84,8 +84,8 @@ export default function GeneratedData() {
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
-      Revisit your Generated Synthetic Numerical Datasets and Explore the History of their Generation!
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+  Synthetic Data Generation History
 </h2>
       </div>
 

@@ -49,8 +49,8 @@ export default function ModelInformation() {
         className="flex items-center justify-between space-y-2"
         {...fadeIn}
       >
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
-  Everything you need to know about the Gaussian Mixture Model (GMM) used for Generating Synthetic Numerical Datasets!
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+   Gaussian Mixture Model (GMM) Overview
 </h2>
       </motion.div>
 

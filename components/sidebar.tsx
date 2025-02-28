@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Data Generation", href: "/generated-data", icon: Database },
+  { name: "Generation History", href: "/generated-data", icon: Database },
   { name: "Numerical Analysis", href: "/analysis", icon: BarChart2 },
   { name: "Data Insights", href: "/insights", icon: Brain },
   { name: "Machine Learning", href: "/ml", icon: BookOpen },
@@ -82,7 +82,7 @@ export default function Sidebar() {
           <div className="mt-auto border-t p-4 cursor-pointer hover:bg-accent transition-colors">
             <div className="flex items-center gap-3 overflow-hidden">
               <Avatar className="shrink-0">
-                <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=60" />
+                <AvatarImage src="https://t3.ftcdn.net/jpg/03/26/84/88/360_F_326848805_qtf1DQC7b5IOsOw0f4PhUV5ubr3W7Oho.jpg" />
                 <AvatarFallback>DA</AvatarFallback>
               </Avatar>
               <div className={cn(
@@ -90,8 +90,8 @@ export default function Sidebar() {
                 isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100",
                 "transition-all duration-300 ease-in-out"
               )}>
-                <p className="text-sm font-medium truncate">Data Scientist</p>
-                <p className="text-xs text-muted-foreground truncate">admin@dataalchemy.ai</p>
+                <p className="text-sm font-medium truncate">Darshan Dihora</p>
+                <p className="text-xs text-muted-foreground truncate">darshan.dihora@djsce.edu.in</p>
               </div>
             </div>
           </div>
@@ -102,20 +102,21 @@ export default function Sidebar() {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=60" />
+                  <AvatarImage src="https://t3.ftcdn.net/jpg/03/26/84/88/360_F_326848805_qtf1DQC7b5IOsOw0f4PhUV5ubr3W7Oho.jpg" />
                   <AvatarFallback>DA</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="text-base font-medium">Sarah Chen</h4>
-                  <p className="text-sm text-muted-foreground">Senior Data Scientist</p>
+                  <h4 className="text-base font-medium">Darshan Dihora</h4>
+                  <p className="text-sm text-muted-foreground">AI Enthusiast</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-sm"><strong>Email:</strong> admin@dataalchemy.ai</p>
-                <p className="text-sm"><strong>Role:</strong> Administrator</p>
-                <p className="text-sm"><strong>Department:</strong> Data Science</p>
-                <p className="text-sm"><strong>Location:</strong> San Francisco, CA</p>
-                <p className="text-sm"><strong>Joined:</strong> January 2024</p>
+                <p className="text-sm"><strong>Email:</strong> darshan.dihora@djsce.edu.in</p>
+                <p className="text-sm"><strong>Role:</strong> Third-year B. Tech Student</p>
+                <p className="text-sm"><strong>Department:</strong> Artificial Intelligence and Data Science</p>
+                <p className="text-sm"><strong>Organization:</strong> SVKM's Dwarkadas J. Sanghvi College of Engineering</p>
+                <p className="text-sm"><strong>Location:</strong> Mumbai, Maharashtra, India</p>
+                <p className="text-sm"><strong>Joined:</strong> December 2022</p>
               </div>
             </div>
           </div>

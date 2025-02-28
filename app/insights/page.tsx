@@ -57,8 +57,8 @@ export default function Insights() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
-  Exploratory Data Analysis: Uncover the Patterns and Insights of your Generated Synthetic Numerical Dataset !
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+  Exploratory Data Analysis
 </h2>
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -73,7 +73,9 @@ export default function Insights() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Data Insights</h1>
+      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+  Exploratory Data Analysis
+</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Feature Distributions */}

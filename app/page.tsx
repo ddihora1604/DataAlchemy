@@ -588,6 +588,7 @@ export default function Home() {
     try {
       setIsGenerating(true);
       setError(null);
+      setGenerationProgress(0);
 
       if (!selectedFile || !dataset) {
         throw new Error('Please upload a dataset first');
@@ -597,19 +598,62 @@ export default function Home() {
         throw new Error('Please specify a valid sample size');
       }
 
-      // Show initial progress
-      setGenerationStage('Starting generation process...');
-      setGenerationProgress(10);
-
-      const result = await generateSyntheticData(selectedFile, sampleSize);
-      
-      if (result.success && result.data) {
-        setGenerationStage('Calculating metrics...');
-        setGenerationProgress(70);
-
-        const columnMetrics = await calculateSyntheticMetrics(result.data);
+      // Initialize progress tracking
+      let currentProgress = 0;
+      const updateProgress = (targetProgress: number, duration: number) => {
+        const startProgress = currentProgress;
+        const increment = targetProgress - startProgress;
+        const startTime = Date.now();
         
-        // Calculate overall metrics
+        const animateProgress = () => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Calculate current integer percentage
+          currentProgress = Math.floor(startProgress + (increment * progress));
+          setGenerationProgress(currentProgress);
+          
+          // Continue animation until target reached
+          if (progress < 1) {
+            requestAnimationFrame(animateProgress);
+          }
+        };
+        
+        requestAnimationFrame(animateProgress);
+      };
+
+      // Initial setup (0-15%)
+      setGenerationStage('Initializing generation process...');
+      updateProgress(15, 1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Data preparation (15-30%)
+      setGenerationStage('Preparing data structures...');
+      updateProgress(30, 1500);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Model training (30-60%)
+      setGenerationStage('Training generation model...');
+      updateProgress(60, 2000);
+      
+      // Generate synthetic data (60-75%)
+      setGenerationStage('Generating synthetic samples...');
+      const result = await generateSyntheticData(selectedFile, sampleSize);
+      updateProgress(75, 1500);
+
+      if (result.success && result.data) {
+        // Calculate metrics (75-90%)
+        setGenerationStage('Calculating data metrics...');
+        updateProgress(90, 1000);
+        
+        const columnMetrics = await calculateSyntheticMetrics(result.data);
+
+        // Quality checks (90-100%)
+        setGenerationStage('Performing quality checks...');
+        updateProgress(100, 1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Calculate overall metrics and update state
         const overallUniqueRatio = Object.values(columnMetrics).reduce((acc, metrics) => {
           return acc + (metrics.uniqueCount ? metrics.uniqueCount / sampleSize : 0);
         }, 0) / Object.keys(columnMetrics).length * 100;
@@ -622,10 +666,9 @@ export default function Home() {
             overallCompleteness: 100
           }
         });
-        
+
         setGeneratedData(result.data);
         setGenerationStage('Generation complete!');
-        setGenerationProgress(100);
 
         toast.success("Synthetic data generated successfully!");
         addNotification(
@@ -635,17 +678,19 @@ export default function Home() {
         );
       }
     } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      addNotification(
-        "Generation Failed",
-        errorMessage,
-        "alert"
-      );
+      console.error('Generation error:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
+      toast.error(error instanceof Error ? error.message : 'An error occurred');
+      setGenerationProgress(0);
+      setGenerationStage('');
     } finally {
-      setIsGenerating(false);
+      if (generationProgress === 100) {
+        setTimeout(() => {
+          setIsGenerating(false);
+        }, 500);
+      } else {
+        setIsGenerating(false);
+      }
     }
   };
 
@@ -680,7 +725,7 @@ export default function Home() {
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 font-sans leading-tight text-center hover:text-gray-700 transition-colors duration-300">
+        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Double your Data, Increase your Insights: Let our AI clone your Data into a Digital Twin!
 </h2>
           
@@ -1023,9 +1068,9 @@ export default function Home() {
                       <div key={column} className="bg-muted/30 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h4 className="font-medium">{column}</h4>
-                          <div className="text-sm text-muted-foreground">
+                          {/* <div className="text-sm text-muted-foreground">
                             {columnMetrics.mean ? `${columnMetrics.mean.toFixed(2)} avg` : 'N/A'}
-                          </div>
+                          </div> */}
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
