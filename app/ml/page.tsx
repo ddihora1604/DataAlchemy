@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ModelTraining } from "@/components/model-training"
 import { 
   LineChart, 
   Line, 
@@ -63,13 +64,10 @@ export default function MachineLearning() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        {/* <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
-   Machine Learning Utility
-</h2> */}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">
-              Please generate synthetic numerical data in the 'Dashboard' first to view ML metrics
+              Please generate synthetic numerical data in the &apos;Dashboard&apos; first to view ML metrics
             </p>
           </CardContent>
         </Card>
@@ -79,11 +77,6 @@ export default function MachineLearning() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      {/* <div className="flex items-center justify-between space-y-2">
-      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
-      Machine Learning Utility
-</h2>
-      </div> */}
       <Tabs defaultValue="training" className="space-y-4">
         <TabsList>
           <TabsTrigger value="training">Model Training</TabsTrigger>
@@ -92,41 +85,7 @@ export default function MachineLearning() {
         </TabsList>
 
         <TabsContent value="training" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Training Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={demoData.trainingProgress}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis {...defaultAxisProps} dataKey="epoch" />
-                    <YAxis {...defaultAxisProps} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))'
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="originalLoss"
-                      stroke="hsl(var(--chart-1))"
-                      name="Original Data Model"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="syntheticLoss"
-                      stroke="hsl(var(--chart-2))"
-                      name="Synthetic Data Model"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <ModelTraining />
         </TabsContent>
 
         <TabsContent value="evaluation" className="grid gap-4 md:grid-cols-2">
@@ -173,7 +132,6 @@ export default function MachineLearning() {
                       stroke="hsl(var(--chart-1))"
                       fill="hsl(var(--chart-1))"
                       fillOpacity={0.6}
-                      data={demoData.performance}
                     />
                     <Radar
                       name="Synthetic Data"
@@ -181,7 +139,6 @@ export default function MachineLearning() {
                       stroke="hsl(var(--chart-2))"
                       fill="hsl(var(--chart-2))"
                       fillOpacity={0.6}
-                      data={demoData.performance}
                     />
                     <Legend />
                   </RadarChart>
