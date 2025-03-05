@@ -31,30 +31,28 @@ export default function Sidebar() {
     )}>
       <div className="flex h-40 items-center border-b px-4 justify-between">
         <div className="flex items-center gap-2 overflow-hidden">
-          <Image
-            src="/DataAlchemy Logo.png"
-            alt="DataAlchemy Logo"
-            width={500}
-            height={500}
-            className="shrink-0"
-            priority
-          />
-          {/* <h1 className={cn(
-            "font-semibold tracking-tight whitespace-nowrap",
-            isCollapsed ? "opacity-0 w-0" : "opacity-100 w-auto",
-            "transition-all duration-300 ease-in-out"
-          )}>
-            DataAlchemy
-          </h1> */}
+          <Link href="/" className="cursor-pointer">
+            {isCollapsed ? (
+              <Image
+                src="/DataAlchemy Short Logo.png"
+                alt="DataAlchemy"               
+                width={40}
+                height={40}
+                className="shrink-0 hover:opacity-80 transition-opacity"
+                priority
+              />
+            ) : (
+              <Image
+                src="/DataAlchemy Logo.png"
+                alt="DataAlchemy Logo"
+                width={500}
+                height={500}
+                className="shrink-0 hover:opacity-80 transition-opacity"
+                priority
+              />
+            )}
+          </Link>
         </div>
-        {/* <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="shrink-0"
-        >
-          <Menu className="h-5 w-5" />
-        </Button> */}
       </div>
       
       <div className="flex-1 overflow-y-auto">
@@ -101,7 +99,7 @@ export default function Sidebar() {
 
         <Sheet>
           <SheetTrigger asChild>
-            <div className="mt-auto border-t p-4 cursor-pointer hover:bg-accent transition-colors">
+            <div className="mt-auto border-t p-3 cursor-pointer hover:bg-accent transition-colors">
               
               <div className="flex items-center gap-3 overflow-hidden">
                 
