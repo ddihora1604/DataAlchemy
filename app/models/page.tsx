@@ -49,9 +49,9 @@ export default function ModelInformation() {
         className="flex items-center justify-between space-y-2"
         {...fadeIn}
       >
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+        {/* <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
    Gaussian Mixture Model (GMM) Overview
-</h2>
+</h2> */}
       </motion.div>
 
       <Tabs defaultValue="overview" className="space-y-4">

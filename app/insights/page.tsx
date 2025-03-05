@@ -57,13 +57,13 @@ export default function Insights() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+        {/* <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Exploratory Data Analysis
-</h2>
+</h2> */}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">
-              Please generate synthetic numericaldata in the 'Dashboard' first to view insights
+              Please generate synthetic numerical data in the 'Dashboard' first to view insights
             </p>
           </CardContent>
         </Card>
@@ -73,9 +73,9 @@ export default function Insights() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+      {/* <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Exploratory Data Analysis
-</h2>
+</h2> */}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Feature Distributions */}

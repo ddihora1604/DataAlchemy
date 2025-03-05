@@ -10,7 +10,7 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 })
 
 const Header = dynamic(() => import('@/components/header'), {
-  loading: () => <div className="h-16 border-b bg-background" />
+  loading: () => <div className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
 })
 
 export function Providers({ children }: { children: React.ReactNode }) {

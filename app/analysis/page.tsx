@@ -509,11 +509,11 @@ export default function Analysis() {
   if (!dataset || !generatedData) {
     return (
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
+        {/* <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Statistical Analysis and Visualizations
 </h2>
-        </div>
+        </div> */}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground">
@@ -527,11 +527,11 @@ export default function Analysis() {
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      {/* <div className="flex items-center justify-between space-y-2">
       <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Statistical Analysis and Visualizations
 </h2>
-      </div>
+      </div> */}
       <Tabs defaultValue="statistics" className="space-y-4">
         <TabsList>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>

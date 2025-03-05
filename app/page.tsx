@@ -712,14 +712,14 @@ export default function Home() {
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      {/* <div className="flex items-center justify-between space-y-2">
         
         <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Synthetic Numerical Data Generator
 </h2>
           
         
-      </div>
+      </div> */}
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="col-span-2 border-0 shadow-none bg-transparent">
