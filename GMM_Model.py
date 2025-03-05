@@ -64,31 +64,6 @@ def detect_modality(data, feature, bins=50):
     return False, 1  # Default: Treat as unimodal
 # ========================================================================
 
-# ================= SELECTING BEST COMPONENT BASED ON BIC ======================================
-def select_best_component(data, max_components=10, plot=True):
-    bic_scores = []
-    aic_scores = []
-    for n in range(1, max_components + 1):
-        gmm = GaussianMixture(n_components=n, covariance_type='full', 
-                             random_state=42, reg_covar=1e-6, n_init=10)
-        gmm.fit(data)
-        bic_scores.append(gmm.bic(data))
-        aic_scores.append(gmm.aic(data))
-    if plot:
-        plt.figure(figsize=(10, 6))
-        plt.plot(range(1, max_components + 1), bic_scores, label='BIC', marker = 'o')
-        plt.plot(range(1, max_components + 1), aic_scores, label='AIC', marker = 's')
-        plt.xlabel('Number of components', fontsize = 14)
-        plt.ylabel('Score', fontsize = 14)
-        plt.legend(fontsize=12)
-        plt.title('BIC and AIC scores for different numbers of components', fontsize=16)
-        plt.grid(True, linestyle='--', alpha=0.6)
-        plt.savefig('bic_aic_plot.png', dpi = 300, bbox_inches='tight', pad_inches=0.2)
-        # plt.show()
-        plt.close()
-    return np.argmin(bic_scores) + 1
-# ========================================================================
-
 # ================= GENERATE DISCRETE DATA ======================================
 def generate_synthetic_discrete(data, features, n_samples=1000, smoothing=0.01):
     if len(features) == 0:

@@ -459,10 +459,8 @@ export default function Home() {
     columns: number;
   } | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [showStatusPopup, setShowStatusPopup] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStage, setGenerationStage] = useState('')
-  const [isPopupClosing, setIsPopupClosing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileDrop = async (e: React.DragEvent<HTMLDivElement>) => {
@@ -553,16 +551,11 @@ export default function Home() {
       });
       
       // Show the success popup
-      setIsPopupClosing(false);
       setUploadSuccessOpen(true);
       
       // Auto-dismiss with animation after 4 seconds
       setTimeout(() => {
-        setIsPopupClosing(true);
-        setTimeout(() => {
-          setUploadSuccessOpen(false);
-          setIsPopupClosing(false);
-        }, 300);
+        setUploadSuccessOpen(false);
       }, 4000);
 
       addNotification(
@@ -717,15 +710,11 @@ export default function Home() {
     }
   }
 
-  const handleChooseFile = () => {
-    fileInputRef.current?.click()
-  }
-
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 font-sans leading-tight text-center hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-300">
   Synthetic Numerical Data Generator
 </h2>
           
@@ -786,7 +775,7 @@ export default function Home() {
                   <Button 
                     variant="outline" 
                     className="relative group mt-4"
-                    onClick={handleChooseFile}
+                    onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
                     Choose File
@@ -809,18 +798,6 @@ export default function Home() {
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                     <FileUp className="h-4 w-4 text-primary animate-bounce" />
                     <span>Processing <span className="font-medium">{selectedFile?.name}</span></span>
-                  </div>
-                </div>
-              )}
-
-              {selectedFile && !isUploading && showStatusPopup && (
-                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 animate-fade-up flex items-center gap-2 text-sm bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full border shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-success" />
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                    <span>
-                      <span className="font-medium">{selectedFile.name}</span> ready for generation
-                    </span>
                   </div>
                 </div>
               )}
@@ -1127,7 +1104,7 @@ export default function Home() {
       {uploadedFileDetails && uploadSuccessOpen && (
         <UploadSuccessPopup
           fileName={uploadedFileDetails.name}
-          isClosing={isPopupClosing}
+          isClosing={true}
         />
       )}
     </div>

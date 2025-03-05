@@ -2,6 +2,13 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Providers } from '@/components/providers';
 import { DataProvider } from "@/contexts/data-context"
+import { Alice } from 'next/font/google'
+
+const alice = Alice({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'DataAlchemy - Synthetic Numerical Data Generator',
@@ -15,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+    <html lang="en" className={alice.className} suppressHydrationWarning>
+      <body className="antialiased">
         <DataProvider>
           <Providers>{children}</Providers>
         </DataProvider>

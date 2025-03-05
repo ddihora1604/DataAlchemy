@@ -116,52 +116,6 @@ export const determineOptimalModel = async (dataset: Dataset): Promise<ModelChoi
   };
 };
 
-interface DataCharacteristics {
-  hasHighDimensionality: boolean;
-  hasContinuousData: boolean;
-  hasComplexRelationships: boolean;
-  hasMultipleTypes: boolean;
-}
-
-const analyzeDataset = (dataset: Dataset): DataCharacteristics => {
-  // Get column count from the columns array
-  const columnCount = dataset.columns.length
-  
-  // Get sample size from the data array
-  const sampleSize = dataset.data.length
-  
-  // Count continuous columns by analyzing the data
-  const continuousColumns = dataset.columns.filter((col, colIndex) => {
-    // Get all values for this column
-    const columnValues = dataset.data.map(row => row[colIndex])
-    // Check if all non-null values are numbers
-    return columnValues.every(value => 
-      value === null || value === undefined || typeof value === 'number'
-    )
-  }).length
-  
-  const correlations = calculateCorrelations(dataset)
-  
-  return {
-    hasHighDimensionality: columnCount > 10,
-    hasContinuousData: continuousColumns / columnCount > 0.7,
-    hasComplexRelationships: hasComplexCorrelations(correlations),
-    hasMultipleTypes: continuousColumns < columnCount
-  }
-}
-
-const calculateCorrelations = (dataset: Dataset): number[][] => {
-  // Simplified correlation calculation
-  // In a real implementation, this would do proper correlation analysis
-  return [[1]]
-}
-
-const hasComplexCorrelations = (correlations: number[][]): boolean => {
-  // Simplified complexity detection
-  // In a real implementation, this would analyze correlation patterns
-  return true
-}
-
 export const generateSyntheticData = async (file: File, numSamples: number): Promise<any> => {
   try {
     console.log('Starting synthetic data generation...', { numSamples });

@@ -74,6 +74,12 @@
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
   }
+  html {
+    font-family: 'Alice', serif;
+  }
+  * {
+    font-family: 'Alice', serif !important;
+  }
 }
 
 @layer base {
@@ -189,47 +195,6 @@
   animation: success-ring 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-@keyframes bounce-small {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.animate-bounce-small {
-  animation: bounce-small 2s ease-in-out infinite;
-}
-
-@keyframes slide-out-right {
-  from {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-.animate-slide-out-right {
-  animation: slide-out-right 0.3s ease-out forwards;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-rotate {
-  animation: rotate 2s linear infinite;
-}
-
 @keyframes progress-pulse {
   0%, 100% {
     opacity: 1;
@@ -241,19 +206,4 @@
 
 .progress-pulse {
   animation: progress-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes slide-down-fade {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-}
-
-.animate-slide-down-fade {
-  animation: slide-down-fade 0.3s ease-out forwards;
 }
