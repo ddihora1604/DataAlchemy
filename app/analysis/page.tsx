@@ -781,10 +781,7 @@ export default function Analysis() {
         </ScatterChart>
       </ResponsiveContainer>
     </div>
-    <div className="mt-2 text-sm text-muted-foreground text-center">
-      Points closer to the diagonal line indicate better correlation preservation. 
-      Original dataset is shown in blue, synthetic dataset is shown in orange.
-    </div>
+    
   </CardContent>
 </Card>
           </div>
