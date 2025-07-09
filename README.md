@@ -8,23 +8,36 @@ DataAlchemy is an advanced AI-powered platform for generating high-quality synth
 
 ## 🎯 Key Features
 
-### Data Generation
-- **Smart Data Synthesis**: Generate realistic synthetic data using advanced statistical models
-- **Multi-Format Support**: Export data in CSV, JSON, and other popular formats
-- **Customizable Schemas**: Define custom data schemas with various data types and constraints
-- **Privacy-Preserving**: Create datasets that maintain statistical properties without exposing sensitive information
+### Advanced Data Generation
+- **Gaussian Mixture Models (GMM)**: Sophisticated statistical modeling for realistic data synthesis
+- **Mixed Data Support**: Handles both continuous and discrete data types seamlessly
+- **Smart Feature Analysis**: Automatically detects and processes different feature types
+- **Correlation Preservation**: Maintains relationships between variables in generated data
+- **Privacy Protection**: Generates synthetic data that preserves statistical properties without exposing sensitive information
 
-### Data Analysis
-- **Statistical Analysis**: Comprehensive statistical summaries of generated data
-- **Data Visualization**: Built-in visualization tools for data exploration
-- **Correlation Preservation**: Maintain relationships between variables in synthetic data
-- **Quality Metrics**: Evaluate the quality and realism of generated data
+### Comprehensive Analysis
+- **Statistical Comparison**: Side-by-side analysis of original vs. synthetic data distributions
+- **Quality Metrics**: Kolmogorov-Smirnov tests and other statistical measures for quality assessment
+- **Visual Analytics**: Built-in visualizations including distribution plots and correlation matrices
+- **Data Profiling**: Automatic detection of data types, missing values, and statistical properties
+
+### Machine Learning Integration
+- **Model Training**: Train and evaluate models on both original and synthetic data
+- **Performance Comparison**: Compare model performance across different datasets
+- **Feature Importance**: Analyze which features contribute most to model predictions
+- **Hyperparameter Tuning**: Optimize model parameters for better performance
 
 ### User Experience
-- **Intuitive Interface**: Clean, modern UI built with Next.js and Tailwind CSS
-- **Real-time Preview**: See data generation results instantly
-- **Responsive Design**: Works seamlessly on desktop and tablet devices
-- **Dark/Light Mode**: Built-in theme support for comfortable usage
+- **Interactive Dashboard**: Modern, responsive interface built with Next.js and React
+- **Drag-and-Drop Interface**: Intuitive controls for data upload and processing
+- **Real-time Feedback**: Immediate visualization of data generation results
+- **Responsive Design**: Works seamlessly across desktop and tablet devices
+
+### Data Management
+- **CSV Import/Export**: Easily import datasets and export generated synthetic data
+- **Data Preview**: Quick view of data samples before and after generation
+- **Batch Processing**: Generate multiple synthetic datasets with different parameters
+- **History Tracking**: Keep track of previously generated datasets
 
 ## 🛠️ Installation Guide
 
